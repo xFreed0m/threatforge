@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./threatforge.db"
     
     # Security
-    secret_key: str
+    secret_key: str = "test-secret-key-for-development"
     
     # App
     environment: str = "development"
