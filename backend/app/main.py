@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.api.scenarios import router as scenarios_router
 
 app = FastAPI(
     title="ThreatForge",
@@ -14,6 +15,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include routers
+app.include_router(scenarios_router)
 
 @app.get("/")
 async def root():

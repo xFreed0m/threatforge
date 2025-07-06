@@ -9,3 +9,6 @@ pytest-cov==4.1.0
 black==23.12.1
 ruff==0.1.11
 fastapi[testclient]==0.109.0
+openai==1.12.0
+anthropic==0.18.1
+pydantic-settings==2.1.0
