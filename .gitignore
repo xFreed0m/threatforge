@@ -33,3 +33,4 @@ dist/
 *.sqlite
 /data/
 /logs/
+.env
