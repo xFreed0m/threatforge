@@ -1,14 +1,4 @@
 <template>
-  <DropdownTest />
-  <div style="margin: 100px;">
-    <Dropdown
-      v-model="testSelected"
-      :options="['Option 1', 'Option 2', 'Option 3']"
-      appendTo="body"
-      placeholder="Select an option"
-      style="width: 200px"
-    />
-  </div>
   <div id="app">
     <div class="container">
       <div class="header">
@@ -65,8 +55,6 @@ import Button from 'primevue/button'
 import ProgressSpinner from 'primevue/progressspinner'
 import ScenarioForm from './components/ScenarioForm.vue'
 import ScenarioDisplay from './components/ScenarioDisplay.vue'
-import DropdownTest from './components/DropdownTest.vue'
-import Dropdown from 'primevue/dropdown'
 
 console.log('App.vue: Starting script setup')
 console.log('App.vue: ScenarioForm component imported:', ScenarioForm)
@@ -75,7 +63,6 @@ const currentScenario = ref(null)
 const error = ref(null)
 const isDark = ref(true)
 const generating = ref(false)
-const testSelected = ref(null)
 
 onMounted(() => {
   console.log('App.vue: onMounted called')
