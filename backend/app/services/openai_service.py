@@ -1,4 +1,4 @@
-import openai
+from openai import AsyncOpenAI
 from typing import Optional
 from app.services.llm_service import LLMService
 from app.core.config import settings
@@ -8,12 +8,12 @@ class OpenAIService(LLMService):
         self.api_key = api_key or settings.openai_api_key
         if not self.api_key:
             raise ValueError("OpenAI API key not provided")
-        openai.api_key = self.api_key
-        self.model = "gpt-4-turbo-preview"
+        self.client = AsyncOpenAI(api_key=self.api_key)
+        self.model = "gpt-4o-mini"
         
     async def generate(self, prompt: str, max_tokens: int = 2000) -> str:
         try:
-            response = await openai.ChatCompletion.acreate(
+            response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": "You are a cybersecurity expert creating tabletop exercise scenarios."},
