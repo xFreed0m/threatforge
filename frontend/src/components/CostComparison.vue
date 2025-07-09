@@ -1,5 +1,12 @@
 <template>
-  <Dialog v-model:visible="visible" modal header="Compare Provider Costs" :closable="true" :style="{ width: '420px' }">
+  <Dialog
+    :visible="visibleProxy"
+    modal
+    header="Compare Provider Costs"
+    :closable="true"
+    :style="{ width: '420px' }"
+    @update:visible="onUpdateVisible"
+  >
     <div v-if="loading" class="cost-loading">
       <ProgressSpinner style="width: 40px; height: 40px;" />
       <span>Estimating costs...</span>
@@ -39,6 +46,15 @@ const props = defineProps({
   tokenEstimate: [String, Number]
 })
 const emit = defineEmits(['update:visible', 'select-provider'])
+
+const visibleProxy = computed({
+  get: () => props.visible,
+  set: (val) => emit('update:visible', val)
+})
+
+function onUpdateVisible(val) {
+  emit('update:visible', val)
+}
 
 const sortedEstimates = computed(() => {
   if (!props.estimates) return []
