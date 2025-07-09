@@ -134,6 +134,14 @@
           :disabled="props.generating || !isFormValid"
           class="generate-button"
         />
+        <Button 
+          @click="compareCosts"
+          label="Compare Costs"
+          icon="pi pi-dollar"
+          class="compare-costs-btn"
+          severity="secondary"
+          style="margin-left: 1rem;"
+        />
         
         <div class="form-status">
           <div class="status-indicator" :class="{ valid: isFormValid }">
@@ -142,6 +150,13 @@
           </div>
         </div>
       </div>
+      <CostComparison
+        v-model:visible="showCostDialog"
+        :estimates="costEstimates"
+        :loading="loadingCosts"
+        :selectedProvider="form.llm_provider"
+        @select-provider="selectProvider"
+      />
     </div>
   </div>
 </template>
@@ -157,6 +172,7 @@ import MultiSelect from 'primevue/multiselect'
 import Chips from 'primevue/chips'
 import Toast from 'primevue/toast'
 import { useToast } from 'primevue/usetoast'
+import CostComparison from './CostComparison.vue'
 
 const emit = defineEmits(['scenario-generated'])
 
@@ -226,6 +242,9 @@ const isFormValid = computed(() => {
 })
 
 const toast = useToast()
+const showCostDialog = ref(false)
+const costEstimates = ref([])
+const loadingCosts = ref(false)
 
 const templateOptions = [
   { label: 'Blank', value: 'blank' },
@@ -304,6 +323,25 @@ onMounted(async () => {
 const generateScenario = async () => {
   if (!isFormValid.value) return
   emit('scenario-generated', form.value)
+}
+
+async function compareCosts() {
+  loadingCosts.value = true
+  showCostDialog.value = true
+  try {
+    const res = await axios.post('/api/scenarios/estimate-cost', form.value)
+    costEstimates.value = res.data
+  } catch (err) {
+    toast.add({ severity: 'error', summary: 'Cost estimation failed', detail: err.response?.data?.detail || 'Failed to estimate costs', life: 3000 })
+    showCostDialog.value = false
+  } finally {
+    loadingCosts.value = false
+  }
+}
+
+function selectProvider(provider) {
+  form.value.llm_provider = provider
+  toast.add({ severity: 'info', summary: 'Provider selected', detail: `Selected: ${provider}`, life: 2000 })
 }
 
 function onDropdownShow(type) {
@@ -639,6 +677,9 @@ label {
 .template-dropdown {
   min-width: 260px;
   width: 260px;
+}
+.compare-costs-btn {
+  margin-left: 1rem;
 }
 </style>
 

@@ -2,6 +2,7 @@
 
 import uuid
 from typing import List
+import datetime
 
 from fastapi import APIRouter, HTTPException
 
@@ -9,6 +10,9 @@ from app.schemas.scenario import CostEstimate, ScenarioRequest, ScenarioResponse
 from app.services.llm_factory import LLMFactory
 
 router = APIRouter(prefix="/api/scenarios", tags=["scenarios"])
+
+# In-memory scenario history
+scenario_history = []
 
 
 def build_prompt(request: ScenarioRequest) -> str:
@@ -76,9 +80,20 @@ async def generate_scenario(request: ScenarioRequest) -> ScenarioResponse:
         prompt = build_prompt(request)
         scenario = await service.generate(prompt)
         cost = service.estimate_cost(prompt)
-        
+        scenario_id = str(uuid.uuid4())
+        created_at = datetime.datetime.utcnow().isoformat()
+        # Store in history
+        scenario_history.append({
+            "id": scenario_id,
+            "company_name": request.company_name,
+            "industry": request.industry,
+            "created_at": created_at,
+            "preview": scenario[:200],
+            "full": scenario,
+            "form_data": request.dict(),
+        })
         return ScenarioResponse(
-            id=str(uuid.uuid4()),
+            id=scenario_id,
             scenario=scenario,
             estimated_cost=cost,
             provider_used=provider.value
@@ -130,3 +145,29 @@ async def get_providers():
     return {
         "providers": [p.value for p in LLMFactory.get_available_providers()]
     }
+
+
+@router.get("/history")
+async def get_scenario_history():
+    # Return a list of previous scenarios (id, company_name, industry, created_at, preview)
+    return [
+        {
+            "id": s["id"],
+            "company_name": s["company_name"],
+            "industry": s["industry"],
+            "created_at": s["created_at"],
+            "preview": s["preview"]
+        }
+        for s in scenario_history
+    ]
+
+
+@router.delete("/history/{scenario_id}")
+async def delete_scenario_history(scenario_id: str):
+    global scenario_history
+    before = len(scenario_history)
+    scenario_history = [s for s in scenario_history if s["id"] != scenario_id]
+    after = len(scenario_history)
+    if before == after:
+        raise HTTPException(status_code=404, detail="Scenario not found")
+    return {"success": True}

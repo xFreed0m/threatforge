@@ -1,6 +1,18 @@
 <template>
   <div id="app">
     <div class="container">
+      <Button 
+        icon="pi pi-history" 
+        label="History" 
+        class="history-toggle-btn" 
+        @click="showHistory = !showHistory"
+        severity="secondary"
+        style="margin-bottom: 1rem;"
+      />
+      <ScenarioHistory 
+        v-if="showHistory" 
+        @load-scenario="handleLoadScenario"
+      />
       <div class="header">
         <div class="title-section">
           <h1>🔥 ThreatForge</h1>
@@ -56,6 +68,8 @@ import Button from 'primevue/button'
 import ProgressSpinner from 'primevue/progressspinner'
 import ScenarioForm from './components/ScenarioForm.vue'
 import ScenarioDisplay from './components/ScenarioDisplay.vue'
+import ScenarioHistory from './components/ScenarioHistory.vue'
+import { useToast } from 'primevue/usetoast'
 
 console.log('App.vue: Starting script setup')
 console.log('App.vue: ScenarioForm component imported:', ScenarioForm)
@@ -65,6 +79,8 @@ const currentFormData = ref(null)
 const error = ref(null)
 const isDark = ref(true)
 const generating = ref(false)
+const showHistory = ref(false)
+const toast = useToast()
 
 onMounted(() => {
   console.log('App.vue: onMounted called')
@@ -116,6 +132,19 @@ const handleGenerate = async (formData) => {
 const regenerate = () => {
   currentScenario.value = null
   error.value = null
+}
+
+function handleLoadScenario({ scenario, formData }) {
+  currentScenario.value = scenario
+  currentFormData.value = formData
+  showHistory.value = false
+  toast.add({ severity: 'info', summary: 'Scenario loaded', detail: 'Scenario loaded from history', life: 2000 })
+}
+
+function handleDeleteScenario(id) {
+  // TODO: Implement delete from backend history
+  // For now, just show a toast
+  alert('Delete not implemented yet')
 }
 </script>
 
@@ -498,6 +527,11 @@ body::after {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-color-secondary);
+}
+
+.history-toggle-btn {
+  float: right;
+  margin-top: 1rem;
 }
 </style>
 
