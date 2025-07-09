@@ -6,7 +6,7 @@ import datetime
 
 from fastapi import APIRouter, HTTPException
 
-from app.schemas.scenario import CostEstimate, ScenarioRequest, ScenarioResponse
+from app.schemas.scenario import CostEstimate, ScenarioRequest, ScenarioResponse, RerollSectionRequest
 from app.services.llm_factory import LLMFactory
 
 router = APIRouter(prefix="/api/scenarios", tags=["scenarios"])
@@ -171,3 +171,37 @@ async def delete_scenario_history(scenario_id: str):
     if before == after:
         raise HTTPException(status_code=404, detail="Scenario not found")
     return {"success": True}
+
+
+@router.post("/reroll")
+async def reroll_section(request: RerollSectionRequest):
+    available_providers = LLMFactory.get_available_providers()
+    if not available_providers:
+        raise HTTPException(status_code=500, detail="No LLM providers configured")
+    provider = request.llm_provider or request.context.get("llm_provider") or available_providers[0]
+    if provider not in available_providers:
+        raise HTTPException(status_code=400, detail=f"Provider {provider} not available")
+    try:
+        service = LLMFactory.create(provider)
+        prompt = (
+            f"""
+You are an expert tabletop exercise scenario writer. Given the following scenario and context, regenerate ONLY the section titled '{request.section_title}'.
+
+Context (original form data):
+{request.context}
+
+Full scenario:
+{request.original_scenario}
+
+Current content of section '{request.section_title}':
+{request.section_content}
+
+---
+
+Please rewrite ONLY the '{request.section_title}' section, keeping the same style, context, and formatting as the original scenario. Do NOT change any other sections. Return only the new content for this section.
+"""
+        )
+        new_section = await service.generate(prompt)
+        return {"section_title": request.section_title, "new_content": new_section}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
