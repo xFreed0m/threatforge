@@ -4,7 +4,7 @@ from typing import List, Optional
 
 from app.core.config import settings
 from app.services.anthropic_service import AnthropicService
-from app.services.llm_service import LLMProvider, LLMService
+from app.services.llm_service import LLMProvider, LLMService, MockLLMService
 from app.services.openai_service import OpenAIService
 
 
@@ -29,6 +29,8 @@ class LLMFactory:
             return OpenAIService(api_key=api_key)
         elif provider == LLMProvider.ANTHROPIC:
             return AnthropicService(api_key=api_key)
+        elif provider == LLMProvider("mock"):
+            return MockLLMService()
         else:
             raise ValueError(f"Unknown provider: {provider}")
     
@@ -45,5 +47,14 @@ class LLMFactory:
             available.append(LLMProvider.OPENAI)
         if settings.anthropic_api_key:
             available.append(LLMProvider.ANTHROPIC)
-            
+        # Add mock provider for test/ci environments
+        if settings.environment.lower() in ("test", "ci") or not available:
+            # Dynamically add a mock provider enum value if not present
+            if not any(p.value == "mock" for p in available):
+                try:
+                    available.append(LLMProvider("mock"))
+                except ValueError:
+                    # If "mock" is not a valid enum, skip
+                    pass
+        
         return available
