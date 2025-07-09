@@ -1,6 +1,22 @@
 <template>
   <div id="app">
-    <div class="container">
+    <!-- Animated SVG cyberpunk logo -->
+    <div class="logo-bar" style="display: flex; align-items: center; justify-content: center; margin-top: 2.5rem;">
+      <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" class="cyber-logo">
+        <rect x="10" y="10" width="60" height="60" rx="14" fill="#181a2a" stroke="#6f00ff" stroke-width="3"/>
+        <rect x="22" y="22" width="36" height="36" rx="8" fill="#181a2a" stroke="#00fff7" stroke-width="2"/>
+        <rect x="32" y="32" width="16" height="16" rx="4" fill="#6f00ff" stroke="#00fff7" stroke-width="1.5">
+          <animate attributeName="x" values="32;36;32" dur="2s" repeatCount="indefinite"/>
+          <animate attributeName="y" values="32;36;32" dur="2s" repeatCount="indefinite"/>
+        </rect>
+      </svg>
+      <div style="margin-left: 1.5rem;">
+        <h2 style="margin: 0; font-size: 2.2rem;">ThreatForge</h2>
+        <div style="color: #a7f6ff; font-size: 1.1rem; letter-spacing: 1px;">AI-powered cybersecurity tabletop exercise generator</div>
+      </div>
+    </div>
+    <!-- Main scenario form card -->
+    <div class="cyber-card">
       <Button 
         icon="pi pi-history" 
         label="History" 
@@ -13,39 +29,18 @@
         v-if="showHistory" 
         @load-scenario="handleLoadScenario"
       />
-      <div class="header">
-        <div class="title-section">
-          <h1>🔥 ThreatForge</h1>
-          <p class="subtitle">AI-powered cybersecurity tabletop exercise generator</p>
-        </div>
-        <div class="theme-toggle">
-          <Button 
-            @click="toggleTheme" 
-            :icon="isDark ? 'pi pi-sun' : 'pi pi-moon'"
-            rounded
-            text
-            severity="secondary"
-            aria-label="Toggle theme"
-            v-tooltip="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
-          />
-        </div>
-      </div>
-      
       <ScenarioForm 
         @scenario-generated="handleGenerate" 
         :generating="generating"
       />
-
       <ProgressSpinner 
         v-if="generating" 
         style="width: 50px; height: 50px; margin: 2rem auto; display: block;"
       />
-      
       <div v-if="error" class="error">
         <i class="pi pi-exclamation-triangle"></i> 
         <span>{{ error }}</span>
       </div>
-      
       <div v-if="currentScenario">
         <ScenarioDisplay 
           :scenario="currentScenario"
@@ -53,9 +48,8 @@
           @regenerate="regenerate"
         />
       </div>
-      
       <div v-else-if="!generating && !error">
-        <p>No scenario generated yet.</p>
+        <p style="text-align:center; color:#a7f6ff; opacity:0.7;">No scenario generated yet.</p>
       </div>
     </div>
   </div>

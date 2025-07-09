@@ -3,6 +3,7 @@ import PrimeVue from 'primevue/config'
 import ToastService from 'primevue/toastservice'
 import 'primeicons/primeicons.css'
 import App from './App.vue'
+import './assets/cyberpunk-theme.css'
 
 console.log('main.js: Creating Vue app')
 console.log('main.js: App component:', App)

@@ -1,15 +1,17 @@
 <template>
-  <Panel header="Scenario History" :toggleable="true" v-model:collapsed="collapsed" class="history-panel">
-    <DataTable :value="history" :loading="loading" class="p-datatable-sm">
-      <Column field="company_name" header="Company" />
-      <Column field="industry" header="Industry" />
-      <Column field="created_at" header="Date" :body="formatDate" />
-      <Column field="preview" header="Preview" :body="previewBody" />
-      <Column header="Actions" :body="actionBody" style="width: 120px;" />
-    </DataTable>
-    <Toast />
-    <ConfirmDialog />
-  </Panel>
+  <div class="scenario-history cyber-card" style="margin-bottom: 2rem;">
+    <Panel header="Scenario History" :toggleable="true" v-model:collapsed="collapsed" class="history-panel">
+      <DataTable :value="history" :loading="loading" class="p-datatable-sm">
+        <Column field="company_name" header="Company" />
+        <Column field="industry" header="Industry" />
+        <Column field="created_at" header="Date" :body="formatDate" />
+        <Column field="preview" header="Preview" :body="previewBody" />
+        <Column header="Actions" :body="actionBody" style="width: 120px;" />
+      </DataTable>
+      <Toast />
+      <ConfirmDialog />
+    </Panel>
+  </div>
 </template>
 
 <script setup>
