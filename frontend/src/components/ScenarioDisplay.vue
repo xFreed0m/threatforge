@@ -55,6 +55,8 @@
               rounded
               class="reroll-button"
               v-tooltip="'Regenerate this section'"
+              :loading="rerollingSection === section.title"
+              :disabled="rerollingSection === section.title"
             />
           </div>
           <div class="section-content" v-html="renderMarkdown(section.content)"></div>
@@ -124,19 +126,24 @@
 </template>
 
 <script setup>
-import { computed, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import Button from 'primevue/button'
 import Chip from 'primevue/chip'
 import Toast from 'primevue/toast'
 import { marked } from 'marked'
+import axios from 'axios'
 
 const props = defineProps({
-  scenario: Object
+  scenario: Object,
+  formData: Object
 })
 
 const emit = defineEmits(['regenerate', 'reroll-section'])
 const toast = useToast()
+
+const rerollingSection = ref(null)
+const sections = ref([])
 
 // Configure marked for security
 marked.setOptions({
@@ -158,50 +165,29 @@ watch(() => props.scenario, (newScenario, oldScenario) => {
     oldKeys: oldScenario ? Object.keys(oldScenario) : null,
     newKeys: newScenario ? Object.keys(newScenario) : null
   })
-}, { immediate: true, deep: true })
+  // Re-parse sections when scenario changes
+  sections.value = parseSections(newScenario?.scenario)
+}, { immediate: true })
 
-const parsedSections = computed(() => {
-  try {
-    if (!props.scenario || !props.scenario.scenario) {
-      console.log('parsedSections: No scenario or scenario.scenario')
-      return []
+function parseSections(text) {
+  if (!text) return []
+  const sections = []
+  const lines = text.split('\n')
+  let currentSection = null
+  for (const line of lines) {
+    if (line.match(/^#{2,}\s+/) || line.match(/^[A-Z][A-Z\s]+:?$/)) {
+      if (currentSection) sections.push(currentSection)
+      const title = line.replace(/^#{2,}\s+/, '').replace(/:$/, '').trim()
+      currentSection = { title, content: '' }
+    } else if (currentSection) {
+      currentSection.content += line + '\n'
     }
-    
-    const text = props.scenario.scenario
-    console.log('parsedSections: Processing text:', text.substring(0, 100) + '...')
-    
-    const sections = []
-    const lines = text.split('\n')
-    let currentSection = null
-    
-    for (const line of lines) {
-      // Match markdown headers: ##, ###, ####, etc. followed by text
-      // OR ALL CAPS headers (with or without colons)
-      if (line.match(/^#{2,}\s+/) || line.match(/^[A-Z][A-Z\s]+:?$/)) {
-        if (currentSection) {
-          sections.push(currentSection)
-        }
-        const title = line.replace(/^#{2,}\s+/, '').replace(/:$/, '').trim()
-        currentSection = {
-          title: title,
-          content: ''
-        }
-      } else if (currentSection) {
-        currentSection.content += line + '\n'
-      }
-    }
-    
-    if (currentSection) {
-      sections.push(currentSection)
-    }
-    
-    console.log('parsedSections: Found sections:', sections.length)
-    return sections
-  } catch (error) {
-    console.error('Error in parsedSections:', error)
-    return []
   }
-})
+  if (currentSection) sections.push(currentSection)
+  return sections
+}
+
+const parsedSections = computed(() => sections.value)
 
 // Function to render markdown content
 const renderMarkdown = (content) => {
@@ -213,13 +199,43 @@ const renderMarkdown = (content) => {
   }
 }
 
-const rerollSection = (sectionTitle) => {
-  toast.add({
-    severity: 'info',
-    summary: 'Re-roll Coming Soon',
-    detail: `Re-rolling "${sectionTitle}" will be implemented next!`,
-    life: 3000
-  })
+async function rerollSection(sectionTitle) {
+  if (rerollingSection.value) return
+  const sectionIdx = sections.value.findIndex(s => s.title === sectionTitle)
+  if (sectionIdx === -1) return
+  rerollingSection.value = sectionTitle
+  try {
+    const response = await axios.post('/api/scenarios/reroll', {
+      original_scenario: props.scenario.scenario,
+      section_title: sectionTitle,
+      section_content: sections.value[sectionIdx].content,
+      context: props.formData,
+      llm_provider: props.scenario.provider_used
+    })
+    if (response.data && response.data.new_content) {
+      sections.value[sectionIdx] = {
+        ...sections.value[sectionIdx],
+        content: response.data.new_content
+      }
+      toast.add({
+        severity: 'success',
+        summary: 'Section Regenerated',
+        detail: `"${sectionTitle}" updated!`,
+        life: 2000
+      })
+    } else {
+      throw new Error('No new content returned')
+    }
+  } catch (err) {
+    toast.add({
+      severity: 'error',
+      summary: 'Re-roll Failed',
+      detail: err.response?.data?.detail || err.message || 'Failed to regenerate section',
+      life: 3000
+    })
+  } finally {
+    rerollingSection.value = null
+  }
 }
 
 const copyToClipboard = async () => {

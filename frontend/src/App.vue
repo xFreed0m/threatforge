@@ -37,6 +37,7 @@
       <div v-if="currentScenario">
         <ScenarioDisplay 
           :scenario="currentScenario"
+          :formData="currentFormData"
           @regenerate="regenerate"
         />
       </div>
@@ -60,6 +61,7 @@ console.log('App.vue: Starting script setup')
 console.log('App.vue: ScenarioForm component imported:', ScenarioForm)
 
 const currentScenario = ref(null)
+const currentFormData = ref(null)
 const error = ref(null)
 const isDark = ref(true)
 const generating = ref(false)
@@ -97,6 +99,7 @@ const handleGenerate = async (formData) => {
   error.value = null
   generating.value = true
   currentScenario.value = null
+  currentFormData.value = formData
   
   try {
     const response = await axios.post('/api/scenarios/generate', formData)

@@ -1,6 +1,18 @@
 <template>
   <div class="scenario-form">
     <div class="form-header">
+      <div class="template-row">
+        <label for="template" class="template-label">Load Template</label>
+        <Dropdown
+          id="template"
+          v-model="selectedTemplate"
+          :options="templateOptions"
+          optionLabel="label"
+          placeholder="Blank"
+          class="template-dropdown"
+          @change="onTemplateChange"
+        />
+      </div>
       <h2 class="form-title">
         <i class="pi pi-magic" style="margin-right: 0.5rem; color: var(--primary-color);"></i>
         Generate Scenario
@@ -69,6 +81,39 @@
         </div>
         
         <div class="field">
+          <label for="technologies">Technologies</label>
+          <MultiSelect
+            id="technologies"
+            v-model="form.technologies"
+            :options="technologyOptions"
+            placeholder="Select technologies"
+            display="chip"
+            class="form-multiselect"
+            :maxSelectedLabels="3"
+          />
+        </div>
+        
+        <div class="field">
+          <label for="participants">Participants</label>
+          <Chips
+            id="participants"
+            v-model="form.participants"
+            separator="," 
+            :allowDuplicate="false"
+            class="form-chips"
+            :addOnBlur="true"
+            :max="10"
+            placeholder="Add participant and press Enter"
+          />
+          <div class="chips-suggestions">
+            <span class="chips-helper">Type and press Enter to add participants</span>
+            <div class="chips-suggestion-list">
+              <span v-for="suggestion in participantSuggestions" :key="suggestion" class="chips-suggestion" @click="addParticipant(suggestion)">{{ suggestion }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="field">
           <label for="duration">Duration (hours)</label>
           <InputNumber 
             id="duration" 
@@ -108,6 +153,10 @@ import InputText from 'primevue/inputtext'
 import InputNumber from 'primevue/inputnumber'
 import Dropdown from 'primevue/dropdown'
 import Button from 'primevue/button'
+import MultiSelect from 'primevue/multiselect'
+import Chips from 'primevue/chips'
+import Toast from 'primevue/toast'
+import { useToast } from 'primevue/usetoast'
 
 const emit = defineEmits(['scenario-generated'])
 
@@ -121,6 +170,16 @@ const props = defineProps({
 const loadingProviders = ref(true)
 const availableProviders = ref([])
 
+const participantSuggestions = [
+  'Legal Team', 'HR Team', 'Communications/PR', 'Executive Leadership',
+  'External Consultants', 'Law Enforcement', 'Cyber Insurance'
+]
+function addParticipant(suggestion) {
+  if (!form.value.participants.includes(suggestion)) {
+    form.value.participants.push(suggestion)
+  }
+}
+
 const form = ref({
   company_name: '',
   industry: '',
@@ -129,12 +188,20 @@ const form = ref({
   scenario_type: 'ransomware',
   duration_hours: 2,
   technologies: [],
-  participants: ['Security Team', 'IT Team'],
+  participants: ['Security Team', 'IT Team', 'Management'],
   llm_provider: null
 })
 
 const sizeOptions = ['small', 'medium', 'large', 'enterprise']
 const threatOptions = ['apt', 'ransomware', 'insider', 'hacktivist', 'cybercriminal']
+const technologyOptions = [
+  'AWS', 'Azure', 'Google Cloud',
+  'Docker', 'Kubernetes',
+  'MongoDB', 'PostgreSQL', 'MySQL',
+  'Active Directory', 'Office 365',
+  'Palo Alto', 'Fortinet', 'CrowdStrike',
+  'Splunk', 'Elastic'
+]
 
 const dropdownOpen = ref(false)
 const openDropdownRef = ref(null)
@@ -157,6 +224,68 @@ const isFormValid = computed(() => {
   })
   return valid
 })
+
+const toast = useToast()
+
+const templateOptions = [
+  { label: 'Blank', value: 'blank' },
+  { label: 'Ransomware Attack - Healthcare', value: 'ransomware_healthcare' },
+  { label: 'Data Breach - Financial Services', value: 'databreach_financial' },
+  { label: 'Insider Threat - Technology Company', value: 'insider_tech' },
+  { label: 'Supply Chain Attack - Manufacturing', value: 'supplychain_manufacturing' },
+  { label: 'DDoS Attack - E-commerce', value: 'ddos_ecommerce' }
+]
+const selectedTemplate = ref('blank')
+
+const templateData = {
+  ransomware_healthcare: {
+    industry: 'Healthcare',
+    threat_actor: 'ransomware',
+    technologies: ['Active Directory', 'EMR Systems', 'Medical Devices'],
+    participants: ['Security Team', 'IT Team', 'Clinical Staff']
+  },
+  databreach_financial: {
+    industry: 'Financial Services',
+    threat_actor: 'apt',
+    technologies: ['Core Banking', 'AWS', 'Databases'],
+    participants: ['Security Team', 'IT Team', 'Compliance']
+  },
+  insider_tech: {
+    industry: 'Technology',
+    threat_actor: 'insider',
+    technologies: ['GitHub', 'AWS', 'Kubernetes'],
+    participants: ['Security Team', 'IT Team', 'HR Team']
+  },
+  supplychain_manufacturing: {
+    industry: 'Manufacturing',
+    threat_actor: 'apt',
+    technologies: ['SCADA', 'ERP Systems'],
+    participants: ['Security Team', 'IT Team', 'Vendors']
+  },
+  ddos_ecommerce: {
+    industry: 'E-commerce',
+    threat_actor: 'hacktivist',
+    technologies: ['CDN', 'Load Balancers', 'AWS'],
+    participants: ['Security Team', 'IT Team', 'Customer Service']
+  }
+}
+
+function onTemplateChange(e) {
+  const val = e.value
+  if (val && val !== 'blank' && templateData[val]) {
+    const t = templateData[val]
+    form.value.industry = t.industry
+    form.value.threat_actor = t.threat_actor
+    form.value.technologies = [...t.technologies]
+    form.value.participants = [...t.participants]
+    toast.add({
+      severity: 'info',
+      summary: 'Template loaded',
+      detail: `Template loaded: ${templateOptions.find(opt => opt.value === val).label}`,
+      life: 2000
+    })
+  }
+}
 
 onMounted(async () => {
   try {
@@ -458,6 +587,58 @@ label {
 
 .dropdown-spacing {
   margin-bottom: 3.5rem !important;
+}
+
+.form-multiselect {
+  width: 100%;
+  min-width: 200px;
+}
+.form-chips {
+  width: 100%;
+  min-width: 200px;
+}
+.chips-suggestions {
+  margin-top: 0.25rem;
+}
+.chips-helper {
+  font-size: 0.85rem;
+  color: var(--text-color-secondary);
+  margin-right: 0.5rem;
+}
+.chips-suggestion-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+.chips-suggestion {
+  background: var(--surface-section);
+  color: var(--primary-color);
+  border-radius: 12px;
+  padding: 0.2rem 0.75rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  border: 1px solid var(--surface-border);
+}
+.chips-suggestion:hover {
+  background: var(--primary-color);
+  color: #fff;
+}
+.template-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.template-label {
+  font-weight: 500;
+  font-size: 1rem;
+  color: var(--text-color-secondary);
+}
+.template-dropdown {
+  min-width: 260px;
+  width: 260px;
 }
 </style>
 
