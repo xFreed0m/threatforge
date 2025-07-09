@@ -1,5 +1,5 @@
 <template>
-  <div class="scenario-form">
+  <div class="scenario-form cyber-card">
     <div class="form-header">
       <div class="template-row">
         <label for="template" class="template-label">Load Template</label>
@@ -11,6 +11,7 @@
           placeholder="Blank"
           class="template-dropdown"
           @change="onTemplateChange"
+          appendTo="body"
         />
       </div>
       <h2 class="form-title">
@@ -22,14 +23,14 @@
     
     <div style="position: relative;">
       <div v-if="dropdownOpen" class="dropdown-overlay" @click="closeDropdown"></div>
-      <div class="form-grid">
+      <div class="form-grid" style="margin-top: 2rem;">
         <div class="field">
           <label for="company">Company Name</label>
           <InputText 
             id="company" 
             v-model="form.company_name" 
             placeholder="Enter company name"
-            class="form-input"
+            class="form-dropdown"
           />
         </div>
         
@@ -39,7 +40,7 @@
             id="industry" 
             v-model="form.industry" 
             placeholder="e.g., Healthcare, Finance, Technology"
-            class="form-input"
+            class="form-dropdown"
           />
         </div>
         
@@ -88,8 +89,9 @@
             :options="technologyOptions"
             placeholder="Select technologies"
             display="chip"
-            class="form-multiselect"
+            class="form-dropdown"
             :maxSelectedLabels="3"
+            appendTo="body"
           />
         </div>
         
@@ -121,11 +123,11 @@
             :min="1" 
             :max="8" 
             :show-buttons="true"
-            class="form-input"
+            class="form-dropdown"
           />
         </div>
       </div>
-      <div class="form-actions">
+      <div class="form-actions" style="margin-top: 2.5rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1.2rem;">
         <Button 
           @click="generateScenario" 
           :loading="props.generating" 

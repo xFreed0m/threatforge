@@ -1,127 +1,129 @@
 <template>
-  <!-- Modern scenario display -->
-  <div v-if="scenario && scenario.scenario" class="scenario-container">
-    <!-- Header with gradient background -->
-    <div class="scenario-header">
-      <div class="header-content">
-        <div class="title-section">
-          <h2 class="scenario-title">
-            <i class="pi pi-shield" style="margin-right: 0.5rem; color: var(--primary-color);"></i>
-            Generated Scenario
-          </h2>
-          <p class="scenario-subtitle">Your cybersecurity tabletop exercise is ready</p>
-        </div>
-        <div class="meta-cards">
-          <div class="meta-card cost-card">
-            <i class="pi pi-dollar" style="color: #4caf50;"></i>
-            <div class="meta-content">
-              <span class="meta-label">Cost</span>
-              <span class="meta-value">${{ scenario.estimated_cost.toFixed(4) }}</span>
+  <div class="scenario-display cyber-card" style="margin-top: 2.5rem;">
+    <!-- Modern scenario display -->
+    <div v-if="scenario && scenario.scenario" class="scenario-container">
+      <!-- Header with gradient background -->
+      <div class="scenario-header">
+        <div class="header-content">
+          <div class="title-section">
+            <h2 class="scenario-title">
+              <i class="pi pi-shield" style="margin-right: 0.5rem; color: var(--primary-color);"></i>
+              Generated Scenario
+            </h2>
+            <p class="scenario-subtitle">Your cybersecurity tabletop exercise is ready</p>
+          </div>
+          <div class="meta-cards">
+            <div class="meta-card cost-card">
+              <i class="pi pi-dollar" style="color: #4caf50;"></i>
+              <div class="meta-content">
+                <span class="meta-label">Cost</span>
+                <span class="meta-value">${{ scenario.estimated_cost.toFixed(4) }}</span>
+              </div>
+            </div>
+            <div class="meta-card provider-card">
+              <i class="pi pi-server" style="color: #2196f3;"></i>
+              <div class="meta-content">
+                <span class="meta-label">Provider</span>
+                <span class="meta-value">{{ scenario.provider_used }}</span>
+              </div>
+            </div>
+            <div class="meta-card id-card">
+              <i class="pi pi-id-card" style="color: #ff9800;"></i>
+              <div class="meta-content">
+                <span class="meta-label">ID</span>
+                <span class="meta-value">{{ scenario.id.substring(0, 8) }}...</span>
+              </div>
             </div>
           </div>
-          <div class="meta-card provider-card">
-            <i class="pi pi-server" style="color: #2196f3;"></i>
-            <div class="meta-content">
-              <span class="meta-label">Provider</span>
-              <span class="meta-value">{{ scenario.provider_used }}</span>
-            </div>
-          </div>
-          <div class="meta-card id-card">
-            <i class="pi pi-id-card" style="color: #ff9800;"></i>
-            <div class="meta-content">
-              <span class="meta-label">ID</span>
-              <span class="meta-value">{{ scenario.id.substring(0, 8) }}...</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Scenario content -->
-    <div class="scenario-content">
-      <!-- Parsed sections display -->
-      <div v-if="parsedSections.length > 0" class="sections-container">
-        <div v-for="(section, index) in parsedSections" :key="index" class="section-card">
-          <div class="section-header">
-            <div class="section-title">
-              <span class="section-number">{{ (index + 1).toString().padStart(2, '0') }}</span>
-              <h3 class="section-title-text">{{ section.title }}</h3>
-            </div>
-            <Button 
-              @click="rerollSection(section.title)" 
-              icon="pi pi-refresh" 
-              size="small"
-              text
-              rounded
-              class="reroll-button"
-              v-tooltip="'Regenerate this section'"
-              :loading="rerollingSection === section.title"
-              :disabled="rerollingSection === section.title"
-            />
-          </div>
-          <div class="section-content" v-html="renderMarkdown(section.content)"></div>
         </div>
       </div>
       
-      <!-- Fallback to raw text if no sections found -->
-      <div v-else class="raw-content-card">
-        <div class="raw-content-header">
-          <h3 class="raw-content-title">
-            <i class="pi pi-file-text" style="margin-right: 0.5rem;"></i>
-            Scenario Content
-          </h3>
+      <!-- Scenario content -->
+      <div class="scenario-content">
+        <!-- Parsed sections display -->
+        <div v-if="parsedSections.length > 0" class="sections-container">
+          <div v-for="(section, index) in parsedSections" :key="index" class="section-card">
+            <div class="section-header">
+              <div class="section-title">
+                <span class="section-number">{{ (index + 1).toString().padStart(2, '0') }}</span>
+                <h3 class="section-title-text">{{ section.title }}</h3>
+              </div>
+              <Button 
+                @click="rerollSection(section.title)" 
+                icon="pi pi-refresh" 
+                size="small"
+                text
+                rounded
+                class="reroll-button"
+                v-tooltip="'Regenerate this section'"
+                :loading="rerollingSection === section.title"
+                :disabled="rerollingSection === section.title"
+              />
+            </div>
+            <div class="section-content" v-html="renderMarkdown(section.content)"></div>
+          </div>
         </div>
-        <div class="raw-content-body">
-          <div class="markdown-content" v-html="renderMarkdown(scenario.scenario)"></div>
+        
+        <!-- Fallback to raw text if no sections found -->
+        <div v-else class="raw-content-card">
+          <div class="raw-content-header">
+            <h3 class="raw-content-title">
+              <i class="pi pi-file-text" style="margin-right: 0.5rem;"></i>
+              Scenario Content
+            </h3>
+          </div>
+          <div class="raw-content-body">
+            <div class="markdown-content" v-html="renderMarkdown(scenario.scenario)"></div>
+          </div>
         </div>
+      </div>
+      
+      <!-- Action buttons -->
+      <div class="action-bar">
+        <div class="action-buttons">
+          <Button 
+            @click="$emit('regenerate')" 
+            label="Regenerate" 
+            icon="pi pi-refresh" 
+            class="primary-action"
+          />
+          <Button 
+            @click="copyToClipboard" 
+            label="Copy" 
+            icon="pi pi-copy" 
+            severity="secondary"
+            class="secondary-action"
+          />
+          <SplitButton
+            :model="exportItems"
+            label="Export"
+            icon="pi pi-download"
+            severity="secondary"
+            class="secondary-action cyber-splitbutton"
+            @click="exportScenario('pdf')"
+          />
+        </div>
+      </div>
+      
+      <Toast />
+    </div>
+    
+    <!-- Fallback when scenario exists but no content -->
+    <div v-else-if="scenario" class="error-container">
+      <div class="error-card">
+        <i class="pi pi-exclamation-triangle" style="font-size: 2rem; color: #ff9800; margin-bottom: 1rem;"></i>
+        <h3>Scenario Received but No Content</h3>
+        <pre class="error-content">{{ JSON.stringify(scenario, null, 2) }}</pre>
       </div>
     </div>
     
-    <!-- Action buttons -->
-    <div class="action-bar">
-      <div class="action-buttons">
-        <Button 
-          @click="$emit('regenerate')" 
-          label="Regenerate" 
-          icon="pi pi-refresh" 
-          class="primary-action"
-        />
-        <Button 
-          @click="copyToClipboard" 
-          label="Copy" 
-          icon="pi pi-copy" 
-          severity="secondary"
-          class="secondary-action"
-        />
-        <SplitButton
-          :model="exportItems"
-          label="Export"
-          icon="pi pi-download"
-          severity="secondary"
-          class="secondary-action"
-          @click="exportScenario('txt')"
-        />
+    <!-- Fallback when no scenario -->
+    <div v-else class="empty-container">
+      <div class="empty-card">
+        <i class="pi pi-file-edit" style="font-size: 3rem; color: var(--text-color-secondary); margin-bottom: 1rem;"></i>
+        <h3>No Scenario Available</h3>
+        <p>Generate a scenario to see it displayed here.</p>
       </div>
-    </div>
-    
-    <Toast />
-  </div>
-  
-  <!-- Fallback when scenario exists but no content -->
-  <div v-else-if="scenario" class="error-container">
-    <div class="error-card">
-      <i class="pi pi-exclamation-triangle" style="font-size: 2rem; color: #ff9800; margin-bottom: 1rem;"></i>
-      <h3>Scenario Received but No Content</h3>
-      <pre class="error-content">{{ JSON.stringify(scenario, null, 2) }}</pre>
-    </div>
-  </div>
-  
-  <!-- Fallback when no scenario -->
-  <div v-else class="empty-container">
-    <div class="empty-card">
-      <i class="pi pi-file-edit" style="font-size: 3rem; color: var(--text-color-secondary); margin-bottom: 1rem;"></i>
-      <h3>No Scenario Available</h3>
-      <p>Generate a scenario to see it displayed here.</p>
     </div>
   </div>
 </template>
@@ -262,7 +264,7 @@ const copyToClipboard = async () => {
 
 const exportItems = [
   { label: 'Text File (.txt)', icon: 'pi pi-file', command: () => exportScenario('txt') },
-  { label: 'Markdown (.md)', icon: 'pi pi-markdown', command: () => exportScenario('md') },
+  { label: 'Markdown (.md)', icon: 'pi pi-file-edit', command: () => exportScenario('md') },
   { label: 'JSON (.json)', icon: 'pi pi-code', command: () => exportScenario('json') },
   { label: 'PDF (.pdf)', icon: 'pi pi-file-pdf', command: () => exportScenario('pdf') }
 ]
@@ -850,5 +852,46 @@ function exportPDF() {
 :root.dark-mode .error-content {
   background: var(--surface-ground);
   color: var(--text-color);
+}
+
+.cyber-splitbutton .p-splitbutton {
+  background: linear-gradient(90deg, #6f00ff 0%, #00fff7 100%) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-family: 'Orbitron', 'Rajdhani', 'Segoe UI', Arial, sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 1.1rem !important;
+  box-shadow: 0 0 12px #6f00ff88, 0 0 2px #00fff7 !important;
+  transition: background 0.2s, box-shadow 0.2s, color 0.2s, transform 0.15s !important;
+  cursor: pointer !important;
+  outline: none !important;
+}
+.cyber-splitbutton .p-splitbutton:hover {
+  background: linear-gradient(90deg, #00fff7 0%, #6f00ff 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 0 24px #00fff7cc, 0 0 8px #6f00ffcc !important;
+}
+.cyber-splitbutton .p-menu {
+  background: rgba(20, 20, 40, 0.98) !important;
+  border: 2px solid #6f00ff !important;
+  color: #e0e6f0 !important;
+  box-shadow: 0 8px 32px 0 #6f00ff44 !important;
+  border-radius: 14px !important;
+  font-family: 'Orbitron', 'Rajdhani', 'Segoe UI', Arial, sans-serif !important;
+  backdrop-filter: blur(12px) saturate(1.2) !important;
+  z-index: 2147483647 !important;
+}
+.cyber-splitbutton .p-menuitem {
+  padding: 0.7rem 1.2rem !important;
+  font-size: 1.05rem !important;
+  color: #a7f6ff !important;
+  border-radius: 8px !important;
+  transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+}
+.cyber-splitbutton .p-menuitem:hover {
+  background: linear-gradient(90deg, #6f00ff44 0%, #00fff744 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 0 12px #00fff7cc, 0 0 8px #6f00ffcc !important;
 }
 </style>
