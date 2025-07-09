@@ -84,3 +84,11 @@ class CostEstimate(BaseModel):
     
     provider: str = Field(description="Name of the LLM provider")
     estimated_cost: float = Field(description="Estimated cost for this provider")
+
+
+class RerollSectionRequest(BaseModel):
+    original_scenario: str = Field(..., description="The full original scenario text")
+    section_title: str = Field(..., description="Title of the section to regenerate")
+    section_content: str = Field(..., description="Current content of that section")
+    context: dict = Field(..., description="Original form data/context for scenario generation")
+    llm_provider: Optional[LLMProvider] = Field(default=None, description="LLM provider to use")
