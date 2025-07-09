@@ -93,12 +93,13 @@
           severity="secondary"
           class="secondary-action"
         />
-        <Button 
-          @click="exportScenario" 
-          label="Export" 
-          icon="pi pi-download" 
+        <SplitButton
+          :model="exportItems"
+          label="Export"
+          icon="pi pi-download"
           severity="secondary"
           class="secondary-action"
+          @click="exportScenario('txt')"
         />
       </div>
     </div>
@@ -133,6 +134,7 @@ import Chip from 'primevue/chip'
 import Toast from 'primevue/toast'
 import { marked } from 'marked'
 import axios from 'axios'
+import SplitButton from 'primevue/splitbutton'
 
 const props = defineProps({
   scenario: Object,
@@ -258,33 +260,68 @@ const copyToClipboard = async () => {
   }
 }
 
-const exportScenario = () => {
-  try {
+const exportItems = [
+  { label: 'Text File (.txt)', icon: 'pi pi-file', command: () => exportScenario('txt') },
+  { label: 'Markdown (.md)', icon: 'pi pi-markdown', command: () => exportScenario('md') },
+  { label: 'JSON (.json)', icon: 'pi pi-code', command: () => exportScenario('json') },
+  { label: 'PDF (.pdf)', icon: 'pi pi-file-pdf', command: () => exportScenario('pdf') }
+]
+
+function exportScenario(format) {
+  if (!props.scenario) return
+  if (format === 'txt') {
     const blob = new Blob([props.scenario.scenario], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `threatforge-scenario-${props.scenario.id}.txt`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-    
-    toast.add({
-      severity: 'success',
-      summary: 'Exported!',
-      detail: 'Scenario downloaded successfully',
-      life: 2000
-    })
-  } catch (err) {
-    console.error('Failed to export scenario:', err)
-    toast.add({
-      severity: 'error',
-      summary: 'Export Failed',
-      detail: 'Please try again',
-      life: 3000
-    })
+    saveBlob(blob, `threatforge-scenario-${props.scenario.id}.txt`)
+    toast.add({ severity: 'success', summary: 'Exported!', detail: 'Exported as Text File', life: 2000 })
+  } else if (format === 'md') {
+    const md = buildMarkdown()
+    const blob = new Blob([md], { type: 'text/markdown' })
+    saveBlob(blob, `threatforge-scenario-${props.scenario.id}.md`)
+    toast.add({ severity: 'success', summary: 'Exported!', detail: 'Exported as Markdown', life: 2000 })
+  } else if (format === 'json') {
+    const data = {
+      ...props.scenario,
+      formData: props.formData
+    }
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    saveBlob(blob, `threatforge-scenario-${props.scenario.id}.json`)
+    toast.add({ severity: 'success', summary: 'Exported!', detail: 'Exported as JSON', life: 2000 })
+  } else if (format === 'pdf') {
+    exportPDF()
+    toast.add({ severity: 'success', summary: 'Exported!', detail: 'Exported as PDF', life: 2000 })
   }
+}
+
+function saveBlob(blob, filename) {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+function buildMarkdown() {
+  let md = `# ThreatForge Scenario\n\n`;
+  md += `**Company:** ${props.formData?.company_name || ''}\n`;
+  md += `**Industry:** ${props.formData?.industry || ''}\n`;
+  md += `**Date:** ${new Date().toLocaleString()}\n`;
+  md += `**Cost:** $${props.scenario.estimated_cost?.toFixed(4) || ''}\n`;
+  md += `**Provider:** ${props.scenario.provider_used || ''}\n`;
+  md += `**ID:** ${props.scenario.id || ''}\n`;
+  md += `\n---\n`;
+  for (const section of parsedSections.value) {
+    md += `\n## ${section.title}\n`;
+    md += section.content + '\n';
+  }
+  return md;
+}
+
+function exportPDF() {
+  // Use window.print() for now with print-specific CSS
+  window.print()
 }
 </script>
 
