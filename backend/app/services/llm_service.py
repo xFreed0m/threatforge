@@ -9,6 +9,7 @@ class LLMProvider(str, Enum):
     
     OPENAI = "openai"
     ANTHROPIC = "anthropic"
+    MOCK = "mock"
 
 
 class LLMService(ABC):
@@ -46,3 +47,12 @@ class LLMService(ABC):
             Estimated cost in USD.
         """
         pass
+
+
+class MockLLMService(LLMService):
+    """Mock LLM service for testing environments."""
+    async def generate(self, prompt: str, max_tokens: int = 2000) -> str:
+        return f"[MOCK SCENARIO GENERATED FOR PROMPT: {prompt[:40]}...]"
+
+    def estimate_cost(self, prompt: str, max_tokens: int = 2000) -> float:
+        return 0.0

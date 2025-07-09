@@ -3,6 +3,7 @@
 import uuid
 from typing import List
 import datetime
+import logging
 
 from fastapi import APIRouter, HTTPException
 
@@ -13,6 +14,8 @@ router = APIRouter(prefix="/api/scenarios", tags=["scenarios"])
 
 # In-memory scenario history
 scenario_history = []
+
+logger = logging.getLogger("scenarios")
 
 
 def build_prompt(request: ScenarioRequest) -> str:
@@ -99,6 +102,7 @@ async def generate_scenario(request: ScenarioRequest) -> ScenarioResponse:
             provider_used=provider.value
         )
     except Exception as e:
+        logger.exception(f"Error generating scenario: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -132,7 +136,8 @@ async def estimate_cost(request: ScenarioRequest) -> List[CostEstimate]:
                     estimated_cost=cost
                 )
             )
-        except Exception:
+        except Exception as e:
+            logger.warning(f"Cost estimation failed for provider {provider}: {e}")
             # Skip providers that fail to estimate cost
             continue
     
@@ -204,4 +209,5 @@ Please rewrite ONLY the '{request.section_title}' section, keeping the same styl
         new_section = await service.generate(prompt)
         return {"section_title": request.section_title, "new_content": new_section}
     except Exception as e:
+        logger.exception(f"Error rerolling section: {e}")
         raise HTTPException(status_code=500, detail=str(e))

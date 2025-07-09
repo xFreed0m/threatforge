@@ -166,3 +166,16 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Built with [FastAPI](https://fastapi.tiangolo.com/) and [Vue.js](https://vuejs.org/)
 - UI components from [PrimeVue](https://primevue.org/)
 - AI capabilities powered by [OpenAI](https://openai.com/) and [Anthropic](https://anthropic.com/)
+
+## Backend Environment Setup
+
+Create a `.env` file in `backend/` or set environment variables for:
+
+```
+OPENAI_API_KEY=your-openai-key-here
+ANTHROPIC_API_KEY=your-anthropic-key-here
+ENVIRONMENT=development
+```
+
+- At least one API key is required for scenario generation endpoints to work.
+- For CI/testing, the backend will use a mock LLM provider if `ENVIRONMENT` is set to `test` or `ci` or if no API keys are present.

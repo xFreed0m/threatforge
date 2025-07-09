@@ -258,53 +258,89 @@ const templateOptions = [
 ]
 const selectedTemplate = ref('blank')
 
-const templateData = {
-  ransomware_healthcare: {
-    industry: 'Healthcare',
-    threat_actor: 'ransomware',
-    technologies: ['Active Directory', 'EMR Systems', 'Medical Devices'],
-    participants: ['Security Team', 'IT Team', 'Clinical Staff']
-  },
-  databreach_financial: {
-    industry: 'Financial Services',
-    threat_actor: 'apt',
-    technologies: ['Core Banking', 'AWS', 'Databases'],
-    participants: ['Security Team', 'IT Team', 'Compliance']
-  },
-  insider_tech: {
-    industry: 'Technology',
-    threat_actor: 'insider',
-    technologies: ['GitHub', 'AWS', 'Kubernetes'],
-    participants: ['Security Team', 'IT Team', 'HR Team']
-  },
-  supplychain_manufacturing: {
-    industry: 'Manufacturing',
-    threat_actor: 'apt',
-    technologies: ['SCADA', 'ERP Systems'],
-    participants: ['Security Team', 'IT Team', 'Vendors']
-  },
-  ddos_ecommerce: {
-    industry: 'E-commerce',
-    threat_actor: 'hacktivist',
-    technologies: ['CDN', 'Load Balancers', 'AWS'],
-    participants: ['Security Team', 'IT Team', 'Customer Service']
+function getTemplateData() {
+  return {
+    ransomware_healthcare: {
+      company_name: 'Acme Health',
+      industry: 'Healthcare',
+      company_size: 'large',
+      threat_actor: 'ransomware',
+      duration_hours: 2,
+      technologies: ['Active Directory', 'EMR Systems', 'Medical Devices'],
+      participants: ['Security Team', 'IT Team', 'Clinical Staff'],
+      llm_provider: availableProviders.value[0] || null
+    },
+    databreach_financial: {
+      company_name: 'FinTrust',
+      industry: 'Financial Services',
+      company_size: 'enterprise',
+      threat_actor: 'apt',
+      duration_hours: 3,
+      technologies: ['Core Banking', 'AWS', 'Databases'],
+      participants: ['Security Team', 'IT Team', 'Compliance'],
+      llm_provider: availableProviders.value[0] || null
+    },
+    insider_tech: {
+      company_name: 'TechNova',
+      industry: 'Technology',
+      company_size: 'medium',
+      threat_actor: 'insider',
+      duration_hours: 2,
+      technologies: ['GitHub', 'AWS', 'Kubernetes'],
+      participants: ['Security Team', 'IT Team', 'HR Team'],
+      llm_provider: availableProviders.value[0] || null
+    },
+    supplychain_manufacturing: {
+      company_name: 'ManuChain',
+      industry: 'Manufacturing',
+      company_size: 'large',
+      threat_actor: 'apt',
+      duration_hours: 2,
+      technologies: ['SCADA', 'ERP Systems'],
+      participants: ['Security Team', 'IT Team', 'Vendors'],
+      llm_provider: availableProviders.value[0] || null
+    },
+    ddos_ecommerce: {
+      company_name: 'Shopster',
+      industry: 'E-commerce',
+      company_size: 'small',
+      threat_actor: 'hacktivist',
+      duration_hours: 1,
+      technologies: ['CDN', 'Load Balancers', 'AWS'],
+      participants: ['Security Team', 'IT Team', 'Customer Service'],
+      llm_provider: availableProviders.value[0] || null
+    }
   }
 }
 
 function onTemplateChange(e) {
   const val = e.value
+  const templateData = getTemplateData()
   if (val && val !== 'blank' && templateData[val]) {
     const t = templateData[val]
-    form.value.industry = t.industry
-    form.value.threat_actor = t.threat_actor
-    form.value.technologies = [...t.technologies]
-    form.value.participants = [...t.participants]
+    form.value.company_name = t.company_name || ''
+    form.value.industry = t.industry || ''
+    form.value.company_size = t.company_size || ''
+    form.value.threat_actor = t.threat_actor || ''
+    form.value.duration_hours = t.duration_hours || 2
+    form.value.technologies = [...(t.technologies || [])]
+    form.value.participants = [...(t.participants || [])]
+    form.value.llm_provider = t.llm_provider || null
     toast.add({
       severity: 'info',
       summary: 'Template loaded',
       detail: `Template loaded: ${templateOptions.find(opt => opt.value === val).label}`,
       life: 2000
     })
+  } else if (val === 'blank') {
+    form.value.company_name = ''
+    form.value.industry = ''
+    form.value.company_size = ''
+    form.value.threat_actor = ''
+    form.value.duration_hours = 2
+    form.value.technologies = []
+    form.value.participants = []
+    form.value.llm_provider = availableProviders.value[0] || null
   }
 }
 
