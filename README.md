@@ -288,8 +288,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - 📧 Email: support@threatforge.dev
 - 💬 Discord: [Join our community](https://discord.gg/threatforge)
-- 🐛 Issues: [GitHub Issues](https://github.com/yourusername/threatforge/issues)
-- 📖 Documentation: [Wiki](https://github.com/yourusername/threatforge/wiki)
+- 🐛 Issues: [GitHub Issues](https://github.com/xFreed0m/threatforge/issues)
+- 📖 Documentation: [Wiki](https://github.com/xFreed0m/threatforge/wiki)
 
 ---
 
