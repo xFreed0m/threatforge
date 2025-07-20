@@ -1,0 +1,29 @@
+services:
+  backend:
+    image: python:3.11-slim
+    container_name: threatforge-backend-dev
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+    command: bash -c "pip install --upgrade pip && pip install -r requirements.txt && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    # Hot-reloading enabled via --reload
+
+  frontend:
+    image: node:20-alpine
+    container_name: threatforge-frontend-dev
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: sh -c "npm install && npm run dev -- --host"
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    # Hot-reloading enabled via npm run dev
+
+# Both services use volume mounts for live code updates and hot-reloading. 
