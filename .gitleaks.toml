@@ -1,0 +1,221 @@
+# GitLeaks configuration for ThreatForge
+# This file configures GitLeaks to scan for secrets while excluding false positives
+
+[global]
+# Set the global configuration
+verbose = true
+redact = false
+debug = false
+
+# Custom rules for ThreatForge-specific patterns
+[[rules]]
+id = "threatforge-api-key"
+description = "ThreatForge API Key Pattern"
+regex = '''sk-proj-[a-zA-Z0-9]{32,}'''
+tags = ["key", "threatforge"]
+severity = "HIGH"
+
+[[rules]]
+id = "threatforge-anthropic-key"
+description = "ThreatForge Anthropic API Key Pattern"
+regex = '''sk-ant-api[0-9]{2}-[a-zA-Z0-9]{32,}'''
+tags = ["key", "anthropic", "threatforge"]
+severity = "HIGH"
+
+# Exclude patterns (false positives)
+[[rules]]
+id = "exclude-example-env"
+description = "Exclude example .env files"
+regex = '''\.env\.example$'''
+tags = ["exclude"]
+severity = "LOW"
+
+[[rules]]
+id = "exclude-test-data"
+description = "Exclude test data and examples"
+regex = '''(test|example|sample|demo|mock).*\.(env|key|secret)'''
+tags = ["exclude"]
+severity = "LOW"
+
+[[rules]]
+id = "exclude-docs"
+description = "Exclude documentation files"
+regex = '''\.(md|txt|rst)$'''
+tags = ["exclude"]
+severity = "LOW"
+
+# Standard secret patterns to detect
+[[rules]]
+id = "openai-api-key"
+description = "OpenAI API Key"
+regex = '''sk-[a-zA-Z0-9]{20,}'''
+tags = ["key", "openai"]
+severity = "HIGH"
+
+[[rules]]
+id = "anthropic-api-key"
+description = "Anthropic API Key"
+regex = '''sk-ant-[a-zA-Z0-9]{32,}'''
+tags = ["key", "anthropic"]
+severity = "HIGH"
+
+[[rules]]
+id = "github-token"
+description = "GitHub Token"
+regex = '''ghp_[a-zA-Z0-9]{36}'''
+tags = ["key", "github"]
+severity = "HIGH"
+
+[[rules]]
+id = "github-oauth"
+description = "GitHub OAuth Token"
+regex = '''gho_[a-zA-Z0-9]{36}'''
+tags = ["key", "github"]
+severity = "HIGH"
+
+[[rules]]
+id = "github-app-token"
+description = "GitHub App Token"
+regex = '''ghu_[a-zA-Z0-9]{36}'''
+tags = ["key", "github"]
+severity = "HIGH"
+
+[[rules]]
+id = "github-refresh-token"
+description = "GitHub Refresh Token"
+regex = '''ghr_[a-zA-Z0-9]{36}'''
+tags = ["key", "github"]
+severity = "HIGH"
+
+[[rules]]
+id = "aws-access-key"
+description = "AWS Access Key ID"
+regex = '''AKIA[0-9A-Z]{16}'''
+tags = ["key", "aws"]
+severity = "HIGH"
+
+[[rules]]
+id = "aws-secret-key"
+description = "AWS Secret Access Key"
+regex = '''[0-9a-zA-Z/+]{40}'''
+tags = ["key", "aws"]
+severity = "HIGH"
+
+[[rules]]
+id = "private-key"
+description = "Private Key"
+regex = '''-----BEGIN PRIVATE KEY-----'''
+tags = ["key", "private"]
+severity = "HIGH"
+
+[[rules]]
+id = "rsa-private-key"
+description = "RSA Private Key"
+regex = '''-----BEGIN RSA PRIVATE KEY-----'''
+tags = ["key", "rsa", "private"]
+severity = "HIGH"
+
+[[rules]]
+id = "ssh-private-key"
+description = "SSH Private Key"
+regex = '''-----BEGIN OPENSSH PRIVATE KEY-----'''
+tags = ["key", "ssh", "private"]
+severity = "HIGH"
+
+[[rules]]
+id = "pgp-private-key"
+description = "PGP Private Key"
+regex = '''-----BEGIN PGP PRIVATE KEY BLOCK-----'''
+tags = ["key", "pgp", "private"]
+severity = "HIGH"
+
+[[rules]]
+id = "database-url"
+description = "Database URL with credentials"
+regex = '''(postgresql|mysql|mongodb)://[^:]+:[^@]+@[^/]+/[^?\s]+'''
+tags = ["database", "credentials"]
+severity = "HIGH"
+
+[[rules]]
+id = "jwt-secret"
+description = "JWT Secret"
+regex = '''["']?[a-zA-Z0-9]{32,}["']?\s*[,;]\s*["']?jwt["']?'''
+tags = ["jwt", "secret"]
+severity = "HIGH"
+
+# Exclude specific files and directories
+[allowlist]
+description = "Allowlist for ThreatForge"
+files = [
+    '''\.env\.example$''',
+    '''\.gitignore$''',
+    '''README\.md$''',
+    '''docs/.*\.md$''',
+    '''tests/.*\.py$''',
+    '''test_.*\.py$''',
+    '''.*_test\.py$''',
+    '''mock_.*\.py$''',
+    '''example_.*\.py$''',
+    '''sample_.*\.py$''',
+    '''demo_.*\.py$''',
+    '''\.dockerignore$''',
+    '''docker-compose\.override\.yml$''',
+    '''docker-compose\.dev\.yml$''',
+    '''docker-compose\.prod\.yml$''',
+    '''Dockerfile.*$''',
+    '''\.github/workflows/.*\.yml$''',
+    '''\.gitleaks\.toml$''',
+    '''\.pre-commit-config\.yaml$'''
+]
+
+# Exclude specific paths
+paths = [
+    '''^\.git/''',
+    '''^node_modules/''',
+    '''^\.venv/''',
+    '''^venv/''',
+    '''^__pycache__/''',
+    '''^\.pytest_cache/''',
+    '''^\.coverage$''',
+    '''^\.env\.local$''',
+    '''^\.env\.test$''',
+    '''^\.env\.development$''',
+    '''^\.env\.production$''',
+    '''^docs/''',
+    '''^tests/''',
+    '''^test/''',
+    '''^examples/''',
+    '''^samples/''',
+    '''^demos/''',
+    '''^mocks/''',
+    '''^fixtures/''',
+    '''^\.github/''',
+    '''^\.vscode/''',
+    '''^\.idea/'''
+]
+
+# Exclude specific commits (if needed)
+commits = [
+    # Add specific commit hashes to exclude if needed
+    # "abc123def456...",
+]
+
+# Exclude specific regex patterns
+regexes = [
+    '''example.*key''',
+    '''test.*secret''',
+    '''mock.*token''',
+    '''sample.*password''',
+    '''demo.*credential''',
+    '''placeholder.*api''',
+    '''dummy.*key''',
+    '''fake.*secret''',
+    '''temporary.*token''',
+    '''development.*key''',
+    '''staging.*secret''',
+    '''local.*password''',
+    '''dev.*credential''',
+    '''debug.*token''',
+    '''temp.*key''',
+    '''tmp.*secret'''
+] 

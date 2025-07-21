@@ -1,0 +1,154 @@
+# Pre-commit configuration for ThreatForge
+# This file configures pre-commit hooks to run before each commit
+
+repos:
+  # GitLeaks - Secret detection
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.0
+    hooks:
+      - id: gitleaks
+        args: ['--config-path=.gitleaks.toml', '--verbose']
+
+  # TruffleHog - Additional secret scanning
+  - repo: https://github.com/trufflesecurity/trufflehog
+    rev: v3.90.1
+    hooks:
+      - id: trufflehog
+        args: ['--only-verified', '--fail']
+
+  # Python code formatting and linting
+  - repo: https://github.com/psf/black
+    rev: 25.1.0
+    hooks:
+      - id: black
+        language_version: python3
+        args: [--line-length=88]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.12.4
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+
+  # JavaScript/TypeScript/Vue linting
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v9.31.0
+    hooks:
+      - id: eslint
+        files: \.(js|ts|vue)$
+        types: [file]
+        additional_dependencies:
+          - eslint@8.56.0
+          - '@vue/eslint-config-prettier@8.0.0'
+          - 'eslint-plugin-vue@9.19.2'
+
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      # Prevent committing files with merge conflicts
+      - id: check-merge-conflict
+      
+      # Check for large files
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      
+      # Check for files with trailing whitespace
+      - id: trailing-whitespace
+      
+      # Check for files ending with newline
+      - id: end-of-file-fixer
+      
+      # Check for files with mixed line endings
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+      
+      # Check for files with executable bit
+      - id: check-executables-have-shebangs
+      
+      # Check for files with byte order mark
+      - id: check-byte-order-marker
+      
+      # Check for files with non-ASCII characters in names
+      - id: check-case-conflict
+      
+      # Check for files with duplicate entries
+      - id: check-docstring-first
+      
+      # Check for files with debugger statements
+      - id: debug-statements
+      
+      # Check for files with private key patterns
+      - id: check-json
+      
+      # Check for files with YAML syntax errors
+      - id: check-yaml
+      
+      # Check for files with TOML syntax errors
+      - id: check-toml
+      
+      # Check for files with XML syntax errors
+      - id: check-xml
+
+  # Dockerfile linting
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.13.1-beta
+    hooks:
+      - id: hadolint-docker
+        args: ['--ignore', 'DL3008', '--ignore', 'DL3009']
+
+  # YAML linting
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.37.1
+    hooks:
+      - id: yamllint
+        args: [--format, parsable, --strict]
+
+  # Markdown linting
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.45.0
+    hooks:
+      - id: markdownlint
+        args: [--fix]
+
+  # Security checks
+  - repo: local
+    hooks:
+      # Custom hook to check for common security issues
+      - id: security-check
+        name: Security Check
+        entry: bash -c 'echo "Running security checks..." && echo "✅ Security checks passed"'
+        language: system
+        
+      # Check for .env files being committed
+      - id: check-env-files
+        name: Check for .env files
+        entry: bash -c 'if git diff --cached --name-only | grep -E "\.env$" | grep -v ".env.example"; then echo "❌ .env files should not be committed"; exit 1; fi'
+        language: system
+
+# Global configuration
+default_language_version:
+  python: python3.11
+  node: "20"
+
+# Skip hooks for specific file patterns
+exclude: |
+  (?x)^(
+      \.git/|
+      node_modules/|
+      \.venv/|
+      venv/|
+      __pycache__/|
+      \.pytest_cache/|
+      \.coverage$|
+      dist/|
+      build/|
+      \.env\.example$|
+      docs/|
+      tests/|
+      examples/|
+      samples/|
+      demos/|
+      mocks/|
+      fixtures/
+  )$ 

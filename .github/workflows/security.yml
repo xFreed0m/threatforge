@@ -1,0 +1,116 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [ main, develop, feat/docker-production-setup ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run weekly security scans
+    - cron: '0 2 * * 1'
+
+jobs:
+  trufflehog:
+    name: TruffleHog Secret Scanner
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full git history for comprehensive scanning
+      
+      - name: Run TruffleHog
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          only-verified: true
+          fail: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  gitleaks:
+    name: GitLeaks Secret Scanner
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full git history for comprehensive scanning
+      
+      - name: Run GitLeaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          config-path: .gitleaks.toml
+          report-format: sarif
+          report-path: gitleaks-report.sarif
+          exit-code: 1
+          verbose: true
+
+  # Upload GitLeaks SARIF report to GitHub Security tab
+  upload-sarif:
+    name: Upload SARIF Report
+    runs-on: ubuntu-latest
+    needs: gitleaks
+    if: always()
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Upload SARIF file
+        if: hashFiles('gitleaks-report.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: gitleaks-report.sarif
+
+  # Additional security checks
+  security-checks:
+    name: Additional Security Checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Check for hardcoded secrets in code
+        run: |
+          echo "Checking for common secret patterns..."
+          
+          # Check for API keys in code files
+          if grep -r "sk-[a-zA-Z0-9]{20,}" . --include="*.py" --include="*.js" --include="*.vue" --include="*.ts" --exclude-dir=node_modules --exclude-dir=.git; then
+            echo "❌ Found potential API keys in code files"
+            exit 1
+          fi
+          
+          # Check for hardcoded passwords
+          if grep -r "password.*=.*['\"][^'\"]{8,}['\"]" . --include="*.py" --include="*.js" --include="*.vue" --include="*.ts" --exclude-dir=node_modules --exclude-dir=.git; then
+            echo "❌ Found potential hardcoded passwords"
+            exit 1
+          fi
+          
+          # Check for database URLs with credentials
+          if grep -r "postgresql://.*:.*@" . --include="*.py" --include="*.js" --include="*.vue" --include="*.ts" --exclude-dir=node_modules --exclude-dir=.git; then
+            echo "❌ Found potential database URLs with credentials"
+            exit 1
+          fi
+          
+          echo "✅ No obvious hardcoded secrets found"
+      
+      - name: Check for .env files in commits
+        run: |
+          echo "Checking for .env files in recent commits..."
+          if git log --name-only --pretty=format: | grep -E "\.env$" | grep -v ".env.example"; then
+            echo "❌ Found .env files in git history (excluding .env.example)"
+            exit 1
+          fi
+          echo "✅ No .env files found in git history" 

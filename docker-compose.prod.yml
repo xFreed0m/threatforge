@@ -1,0 +1,35 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: threatforge-backend-prod
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    networks:
+      - threatforge-net
+    restart: unless-stopped
+    # Gunicorn is used for production WSGI serving
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: threatforge-frontend-prod
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - threatforge-net
+    restart: unless-stopped
+    # Nginx serves the built static files
+
+networks:
+  threatforge-net:
+    driver: bridge
+
+# The .env file is used for environment variables and is mounted into the backend service.
+# Both services are on the same Docker network for internal communication. 
