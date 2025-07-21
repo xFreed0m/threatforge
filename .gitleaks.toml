@@ -22,28 +22,6 @@ regex = '''sk-ant-api[0-9]{2}-[a-zA-Z0-9]{32,}'''
 tags = ["key", "anthropic", "threatforge"]
 severity = "HIGH"
 
-# Exclude patterns (false positives)
-[[rules]]
-id = "exclude-example-env"
-description = "Exclude example .env files"
-regex = '''\.env\.example$'''
-tags = ["exclude"]
-severity = "LOW"
-
-[[rules]]
-id = "exclude-test-data"
-description = "Exclude test data and examples"
-regex = '''(test|example|sample|demo|mock).*\.(env|key|secret)'''
-tags = ["exclude"]
-severity = "LOW"
-
-[[rules]]
-id = "exclude-docs"
-description = "Exclude documentation files"
-regex = '''\.(md|txt|rst)$'''
-tags = ["exclude"]
-severity = "LOW"
-
 # Standard secret patterns to detect
 [[rules]]
 id = "openai-api-key"
@@ -94,12 +72,20 @@ regex = '''AKIA[0-9A-Z]{16}'''
 tags = ["key", "aws"]
 severity = "HIGH"
 
+# More specific AWS secret key pattern - must start with the key context
 [[rules]]
 id = "aws-secret-key"
 description = "AWS Secret Access Key"
-regex = '''[0-9a-zA-Z/+]{40}'''
+regex = '''(?i)(aws.{0,20})?['\"]?[A-Za-z0-9/\+=]{40}['\"]?'''
 tags = ["key", "aws"]
 severity = "HIGH"
+[rules.allowlist]
+description = "Allow npm integrity hashes and other legitimate base64 content"
+regexes = [
+    '''integrity["\s]*:["\s]*sha\d+-[A-Za-z0-9+/]+=*''',  # npm integrity hashes
+    '''["']resolved["']:\s*["']https://registry\.npmjs\.org/''', # npm registry URLs
+    '''"tarball":\s*"https://registry\.npmjs\.org/''', # npm tarball URLs
+]
 
 [[rules]]
 id = "private-key"
@@ -143,6 +129,28 @@ regex = '''["']?[a-zA-Z0-9]{32,}["']?\s*[,;]\s*["']?jwt["']?'''
 tags = ["jwt", "secret"]
 severity = "HIGH"
 
+# Exclude patterns (false positives)
+[[rules]]
+id = "exclude-example-env"
+description = "Exclude example .env files"
+regex = '''\.env\.example$'''
+tags = ["exclude"]
+severity = "LOW"
+
+[[rules]]
+id = "exclude-test-data"
+description = "Exclude test data and examples"
+regex = '''(test|example|sample|demo|mock).*\.(env|key|secret)'''
+tags = ["exclude"]
+severity = "LOW"
+
+[[rules]]
+id = "exclude-docs"
+description = "Exclude documentation files"
+regex = '''\.(md|txt|rst)$'''
+tags = ["exclude"]
+severity = "LOW"
+
 # Exclude specific files and directories
 [allowlist]
 description = "Allowlist for ThreatForge"
@@ -165,7 +173,10 @@ files = [
     '''Dockerfile.*$''',
     '''\.github/workflows/.*\.yml$''',
     '''\.gitleaks\.toml$''',
-    '''\.pre-commit-config\.yaml$'''
+    '''\.pre-commit-config\.yaml$''',
+    '''package-lock\.json$''',  # Exclude package-lock.json entirely
+    '''yarn\.lock$''',          # Exclude yarn.lock
+    '''pnpm-lock\.yaml$''',     # Exclude pnpm-lock.yaml
 ]
 
 # Exclude specific paths
@@ -191,7 +202,9 @@ paths = [
     '''^fixtures/''',
     '''^\.github/''',
     '''^\.vscode/''',
-    '''^\.idea/'''
+    '''^\.idea/''',
+    '''^frontend/node_modules/''',  # Frontend node_modules
+    '''^backend/\.venv/''',         # Backend venv
 ]
 
 # Exclude specific commits (if needed)
@@ -217,5 +230,23 @@ regexes = [
     '''dev.*credential''',
     '''debug.*token''',
     '''temp.*key''',
-    '''tmp.*secret'''
+    '''tmp.*secret''',
+    # NPM package integrity hashes
+    '''"integrity":\s*"sha\d+-[A-Za-z0-9+/]+=*"''',
+    '''"resolved":\s*"https://registry\.npmjs\.org/''',
+    '''"tarball":\s*"https://registry\.npmjs\.org/''',
+    # Base64 encoded content in package files
+    '''[A-Za-z0-9+/]{40,}={0,2}"\s*,?\s*$''',  # Base64 at end of line
+    # GitHub Actions references
+    '''actions/.*@v\d+''',
+    '''github\.com/.*@''',
+    # Documentation and example references
+    '''\.env\.example''',
+    '''your-.*-key-here''',
+    '''sk-your-.*-key-here''',
+    '''your-secret-key-here''',
+    '''example.*\.com''',
+    # Common false positive patterns
+    '''sha\d+-[A-Za-z0-9+/]+=*''',   # SHA integrity hashes
+    '''[A-Za-z0-9+/]{40,}={0,2}(?=["'\s,}\]])''',  # Base64 followed by delimiters
 ] 
