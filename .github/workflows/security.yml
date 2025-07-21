@@ -44,11 +44,20 @@ jobs:
         with:
           fetch-depth: 0  # Full git history for comprehensive scanning
       
+      - name: Download GitLeaks
+        run: |
+          # Get the latest release info and download GitLeaks
+          GITLEAKS_VERSION=$(curl -s https://api.github.com/repos/gitleaks/gitleaks/releases/latest | jq -r '.tag_name')
+          DOWNLOAD_URL="https://github.com/gitleaks/gitleaks/releases/download/${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION#v}_linux_x64.tar.gz"
+          echo "Downloading GitLeaks from: $DOWNLOAD_URL"
+          curl -sSfL "$DOWNLOAD_URL" | tar -xz
+          chmod +x gitleaks
+          ./gitleaks version
+      
       - name: Run GitLeaks with SARIF output
         id: gitleaks
         run: |
-          # Download and run gitleaks directly with explicit SARIF output
-          curl -sSfL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks_linux_x64.tar.gz | tar -xz
+          # Run gitleaks with explicit SARIF output
           ./gitleaks detect --config .gitleaks.toml --report-format sarif --report-path results.sarif --verbose --exit-code 0 || true
           
           # Check if any leaks were found
@@ -61,7 +70,9 @@ jobs:
             
             if [ "$LEAKS_COUNT" -gt 0 ]; then
               echo "⚠️ GitLeaks found $LEAKS_COUNT potential secret(s)"
-              # Don't fail the job, let SARIF upload handle it
+              # Show first few findings for debugging
+              echo "First few findings:"
+              jq '.runs[0].results[:3] | .[] | {ruleId, message: .message.text, location: .locations[0].physicalLocation.artifactLocation.uri}' results.sarif || true
             else
               echo "✅ GitLeaks found no secrets"
             fi
