@@ -1,8 +1,12 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from typing import List
 from ..services import file_service
-from ..schemas.threat_model import FileUploadResponse, ThreatModelRequest, ThreatModelResponse
+from ..schemas.threat_model import (
+    FileUploadResponse, ThreatModelRequest, ThreatModelResponse,
+    AsyncThreatModelRequest, JobResponse, JobStatusResponse, JobStatus
+)
 from ..services.llm_factory import LLMFactory
+from ..services.job_service import job_service
 import uuid
 import datetime
 import logging
@@ -13,11 +17,11 @@ logger = logging.getLogger("threat_model")
 
 def build_threat_model_prompt(request: ThreatModelRequest, file_content: str = None) -> str:
     """Build the prompt for threat modeling generation."""
-    
+
     content_to_analyze = request.content
     if file_content:
         content_to_analyze = f"Diagram Content:\n{file_content}\n\nAdditional Context:\n{request.content}"
-    
+
     return f"""You are a cybersecurity expert performing threat modeling analysis. 
 
 Please analyze the following system using the {request.framework} framework:
@@ -98,6 +102,80 @@ async def generate_threat_model(request: ThreatModelRequest) -> ThreatModelRespo
     except Exception as e:
         logger.exception(f"Error generating threat model: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/generate-async", response_model=JobResponse)
+async def generate_threat_model_async(request: AsyncThreatModelRequest) -> JobResponse:
+    """Generate a threat model asynchronously.
+    
+    Args:
+        request: The async threat modeling request.
+        
+    Returns:
+        Job response with job ID and initial status.
+    """
+    try:
+        job_id = job_service.create_job(request)
+        job_status = job_service.get_job_status(job_id)
+        
+        return JobResponse(
+            job_id=job_id,
+            status=job_status.status,
+            message=job_status.message,
+            estimated_completion=job_status.estimated_completion
+        )
+    except Exception as e:
+        logger.exception(f"Error creating async job: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/jobs/{job_id}", response_model=JobStatusResponse)
+async def get_job_status(job_id: str) -> JobStatusResponse:
+    """Get the status of an async job.
+    
+    Args:
+        job_id: The job identifier.
+        
+    Returns:
+        Current job status and progress.
+        
+    Raises:
+        HTTPException: If job not found.
+    """
+    job_status = job_service.get_job_status(job_id)
+    if not job_status:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    return job_status
+
+@router.delete("/jobs/{job_id}")
+async def cancel_job(job_id: str):
+    """Cancel an async job.
+    
+    Args:
+        job_id: The job identifier.
+        
+    Returns:
+        Success message if job was cancelled.
+        
+    Raises:
+        HTTPException: If job not found or cannot be cancelled.
+    """
+    success = job_service.cancel_job(job_id)
+    if not success:
+        raise HTTPException(status_code=400, detail="Job not found or cannot be cancelled")
+    
+    return {"detail": "Job cancelled successfully"}
+
+@router.get("/jobs", response_model=List[JobStatusResponse])
+async def list_jobs(limit: int = 50) -> List[JobStatusResponse]:
+    """List recent jobs.
+    
+    Args:
+        limit: Maximum number of jobs to return.
+        
+    Returns:
+        List of recent jobs.
+    """
+    return job_service.list_jobs(limit)
 
 @router.post("/estimate-cost")
 async def estimate_cost(request: ThreatModelRequest):

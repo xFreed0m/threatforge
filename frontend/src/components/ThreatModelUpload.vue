@@ -1,6 +1,25 @@
 <template>
   <div class="threat-model-upload">
-    <h2>Generate Threat Model</h2>
+    <div class="threat-model-header cyber-card">
+      <div class="header-content">
+        <div class="title-section">
+          <h2>
+            <i class="pi pi-shield" style="margin-right: 0.5rem; color: var(--primary-color);"></i>
+            AI-Powered Threat Modeling
+          </h2>
+          <p>Generate comprehensive threat models using advanced AI analysis</p>
+        </div>
+        <div class="header-actions">
+          <Button 
+            icon="pi pi-question-circle" 
+            label="Tutorial"
+            @click="showTutorial = true"
+            severity="secondary"
+            outlined
+          />
+        </div>
+      </div>
+    </div>
     
     <!-- Threat Model Form -->
     <div class="threat-model-form cyber-card">
@@ -65,21 +84,40 @@
       </div>
       
       <div class="form-actions">
-        <Button 
-          @click="generateThreatModel" 
-          :loading="generating" 
-          label="Generate Threat Model"
-          icon="pi pi-shield"
-          :disabled="generating || !isFormValid"
-          class="generate-button"
-        />
-        <Button 
-          @click="compareCosts"
-          label="Compare Costs"
-          icon="pi pi-dollar"
-          class="compare-costs-btn"
-          severity="secondary"
-        />
+        <div class="generation-mode">
+          <label class="mode-toggle">
+            <input 
+              type="checkbox" 
+              v-model="useAsyncMode"
+              class="mode-checkbox"
+            />
+            <span class="mode-label">
+              <i class="pi" :class="useAsyncMode ? 'pi-clock' : 'pi-bolt'"></i>
+              {{ useAsyncMode ? 'Async Mode' : 'Sync Mode' }}
+            </span>
+          </label>
+          <span class="mode-description">
+            {{ useAsyncMode ? 'Generate in background with progress tracking' : 'Generate immediately and wait for result' }}
+          </span>
+        </div>
+        
+        <div class="action-buttons">
+          <Button 
+            @click="generateThreatModel" 
+            :loading="generating" 
+            :label="useAsyncMode ? 'Create Async Job' : 'Generate Threat Model'"
+            :icon="useAsyncMode ? 'pi-clock' : 'pi-shield'"
+            :disabled="generating || !isFormValid"
+            class="generate-button"
+          />
+          <Button 
+            @click="compareCosts"
+            label="Compare Costs"
+            icon="pi pi-dollar"
+            class="compare-costs-btn"
+            severity="secondary"
+          />
+        </div>
         
         <div class="form-status">
           <div class="status-indicator" :class="{ valid: isFormValid }">
@@ -132,7 +170,12 @@
         @regenerate="regenerate"
       />
     </div>
-    
+
+    <!-- Job Monitor -->
+    <div class="job-monitor-section cyber-card">
+      <JobMonitor @view-result="handleJobResult" />
+    </div>
+
     <!-- Cost Comparison Dialog -->
     <CostComparison
       v-model:visible="showCostDialog"
@@ -140,6 +183,13 @@
       :loading="loadingCosts"
       :selectedProvider="form.llm_provider"
       @select-provider="selectProvider"
+    />
+
+    <!-- Tutorial Modal -->
+    <ThreatModelTutorial 
+      :showTutorial="showTutorial"
+      @close="showTutorial = false"
+      @start-modeling="handleStartModeling"
     />
   </div>
 </template>
@@ -155,6 +205,8 @@ import Textarea from 'primevue/textarea'
 import { useToast } from 'primevue/usetoast'
 import CostComparison from './CostComparison.vue'
 import ThreatModelDisplay from './ThreatModelDisplay.vue'
+import JobMonitor from './JobMonitor.vue'
+import ThreatModelTutorial from './ThreatModelTutorial.vue'
 
 const toast = useToast()
 
@@ -182,6 +234,12 @@ const showCostDialog = ref(false)
 const costEstimates = ref([])
 const loadingCosts = ref(false)
 
+// Async generation mode
+const useAsyncMode = ref(false)
+
+// Tutorial state
+const showTutorial = ref(false)
+
 const frameworkOptions = [
   { label: 'STRIDE', value: 'STRIDE' },
   { label: 'LINDDUN', value: 'LINDDUN' },
@@ -200,109 +258,182 @@ const fileOptions = computed(() => {
   }))
 })
 
-function formatSize(size) {
-  if (size > 1024 * 1024) return (size / (1024 * 1024)).toFixed(2) + ' MB'
-  if (size > 1024) return (size / 1024).toFixed(1) + ' KB'
-  return size + ' B'
-}
-
 async function fetchFiles() {
-  const res = await axios.get('/api/threat-model/files')
-  files.value = res.data
-}
-
-function onFileChange(e) {
-  error.value = null
-  const filesArr = Array.from(e.target.files)
-  selectedFiles.value = filesArr.filter(validateFile)
-}
-
-function onDrop(e) {
-  error.value = null
-  const filesArr = Array.from(e.dataTransfer.files)
-  selectedFiles.value = filesArr.filter(validateFile)
-}
-
-function validateFile(file) {
-  const allowed = ['drawio', 'png', 'jpg', 'svg', 'xml']
-  const ext = file.name.split('.').pop().toLowerCase()
-  if (!allowed.includes(ext)) {
-    error.value = 'Unsupported file type.'
-    return false
+  try {
+    const response = await axios.get('/api/threat-model/files')
+    files.value = response.data
+  } catch (error) {
+    console.error('Failed to fetch files:', error)
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Failed to load uploaded files',
+      life: 3000
+    })
   }
-  if (file.size > 10 * 1024 * 1024) {
-    error.value = 'File too large (max 10MB).'
-    return false
-  }
-  return true
 }
 
 async function handleUpload() {
   if (!selectedFiles.value.length) return
-  error.value = null
+  
   uploading.value = true
-  uploadProgress.value = {}
+  error.value = null
+  
   try {
-    await Promise.all(selectedFiles.value.map(file => uploadSingleFile(file)))
-    selectedFiles.value = []
+    for (const file of selectedFiles.value) {
+      const formData = new FormData()
+      formData.append('file', file)
+      
+      uploadProgress.value[file.name] = 0
+      
+      await axios.post('/api/threat-model/upload', formData, {
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            uploadProgress.value[file.name] = Math.round(
+              (progressEvent.loaded * 100) / progressEvent.total
+            )
+          }
+        }
+      })
+    }
+    
     await fetchFiles()
-    toast.add({ severity: 'success', summary: 'Upload Complete', detail: 'Files uploaded successfully', life: 2000 })
-  } catch (e) {
-    error.value = e.response?.data?.detail || 'Upload failed.'
-    toast.add({ severity: 'error', summary: 'Upload Failed', detail: error.value, life: 3000 })
+    selectedFiles.value = []
+    uploadProgress.value = {}
+    
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: 'Files uploaded successfully',
+      life: 3000
+    })
+  } catch (error) {
+    console.error('Upload failed:', error)
+    error.value = error.response?.data?.detail || 'Upload failed'
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: error.value,
+      life: 3000
+    })
   } finally {
     uploading.value = false
   }
 }
 
-async function uploadSingleFile(file) {
-  return new Promise((resolve, reject) => {
-    const formData = new FormData()
-    formData.append('file', file)
-    const xhr = new XMLHttpRequest()
-    xhr.open('POST', '/api/threat-model/upload')
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) {
-        uploadProgress.value[file.name] = Math.round((e.loaded / e.total) * 100)
-      }
-    }
-    xhr.onload = () => {
-      uploadProgress.value[file.name] = 100
-      resolve()
-    }
-    xhr.onerror = () => {
-      error.value = 'Upload failed.'
-      reject()
-    }
-    xhr.send(formData)
-  })
+function onFileChange(event) {
+  selectedFiles.value = Array.from(event.target.files)
+}
+
+function onDrop(event) {
+  event.preventDefault()
+  selectedFiles.value = Array.from(event.dataTransfer.files)
+}
+
+function formatSize(bytes) {
+  if (bytes === 0) return '0 Bytes'
+  const k = 1024
+  const sizes = ['Bytes', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
+
+async function deleteFile(fileId) {
+  try {
+    await axios.delete(`/api/threat-model/files/${fileId}`)
+    await fetchFiles()
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: 'File deleted successfully',
+      life: 3000
+    })
+  } catch (error) {
+    console.error('Delete failed:', error)
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Failed to delete file',
+      life: 3000
+    })
+  }
 }
 
 async function bulkDelete() {
-  await Promise.all(selectedToDelete.value.map(id => deleteFile(id, true)))
-  selectedToDelete.value = []
-  await fetchFiles()
-  toast.add({ severity: 'success', summary: 'Files Deleted', detail: 'Selected files deleted successfully', life: 2000 })
-}
-
-async function deleteFile(file_id, silent) {
-  await axios.delete(`/api/threat-model/files/${file_id}`)
-  if (!silent) {
+  if (!selectedToDelete.value.length) return
+  
+  try {
+    for (const fileId of selectedToDelete.value) {
+      await axios.delete(`/api/threat-model/files/${fileId}`)
+    }
     await fetchFiles()
-    toast.add({ severity: 'success', summary: 'File Deleted', detail: 'File deleted successfully', life: 2000 })
+    selectedToDelete.value = []
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: 'Files deleted successfully',
+      life: 3000
+    })
+  } catch (error) {
+    console.error('Bulk delete failed:', error)
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Failed to delete some files',
+      life: 3000
+    })
   }
 }
 
 async function generateThreatModel() {
   if (!isFormValid.value) return
+  
   generating.value = true
-  currentThreatModel.value = null
+  error.value = null
+  
   try {
-    const response = await axios.post('/api/threat-model/generate', form.value)
-    currentThreatModel.value = response.data
-    toast.add({ severity: 'success', summary: 'Threat Model Generated', detail: 'Analysis completed successfully', life: 3000 })
-  } catch (err) {
-    toast.add({ severity: 'error', summary: 'Generation Failed', detail: err.response?.data?.detail || 'Failed to generate threat model', life: 3000 })
+    if (useAsyncMode.value) {
+      // Use async generation
+      const response = await axios.post('/api/threat-model/generate-async', {
+        content: form.value.content,
+        framework: form.value.framework,
+        file_id: form.value.file_id,
+        llm_provider: form.value.llm_provider
+      })
+      
+      toast.add({
+        severity: 'success',
+        summary: 'Job Created',
+        detail: `Async job created with ID: ${response.data.job_id.slice(-8)}`,
+        life: 5000
+      })
+    } else {
+      // Use sync generation
+      const response = await axios.post('/api/threat-model/generate', {
+        content: form.value.content,
+        framework: form.value.framework,
+        file_id: form.value.file_id,
+        llm_provider: form.value.llm_provider
+      })
+      
+      currentThreatModel.value = response.data
+      
+      toast.add({
+        severity: 'success',
+        summary: 'Success',
+        detail: 'Threat model generated successfully',
+        life: 3000
+      })
+    }
+  } catch (error) {
+    console.error('Generation failed:', error)
+    error.value = error.response?.data?.detail || 'Generation failed'
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: error.value,
+      life: 3000
+    })
   } finally {
     generating.value = false
   }
@@ -329,6 +460,40 @@ function selectProvider(provider) {
 
 function regenerate() {
   currentThreatModel.value = null
+}
+
+function handleJobResult(result) {
+  currentThreatModel.value = result
+  toast.add({
+    severity: 'success',
+    summary: 'Result Loaded',
+    detail: 'Threat model result loaded from job',
+    life: 3000
+  })
+}
+
+function handleStartModeling() {
+  // Pre-fill form with example content when user completes tutorial
+  form.value.content = `Our web application is a customer portal that allows users to:
+- Register and authenticate using email/password
+- View and update their profile information
+- Upload and download documents (PDF, images)
+- Make payments using credit cards
+- Access support tickets and chat with agents
+
+The system uses:
+- React frontend with Node.js backend
+- PostgreSQL database for user data
+- AWS S3 for file storage
+- Stripe for payment processing
+- Redis for session management`
+  
+  toast.add({
+    severity: 'info',
+    summary: 'Tutorial Complete',
+    detail: 'Example content loaded. You can modify it or start generating your threat model!',
+    life: 5000
+  })
 }
 
 onMounted(async () => {
@@ -359,6 +524,52 @@ onMounted(async () => {
   max-width: 800px;
   margin: 0 auto;
   padding: 2rem 0;
+}
+
+.threat-model-header {
+  margin-bottom: 2rem;
+  padding: 2rem;
+  background: var(--surface-card);
+  border-radius: 16px;
+  border: 1px solid var(--surface-border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.title-section h2 {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 1.8rem;
+  margin: 0;
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+}
+
+.title-section p {
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  color: var(--text-color-secondary);
+  margin: 0;
+  opacity: 0.9;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .threat-model-form, .file-upload-section, .threat-model-results {
@@ -440,32 +651,77 @@ label {
   margin-top: 2rem;
 }
 
-.generate-button {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-600) 100%);
-  border: none;
-  padding: 1rem 2rem;
-  font-size: 1.125rem;
-  font-weight: 600;
+.generation-mode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
   border-radius: 12px;
-  min-width: 200px;
+  background: var(--surface-section);
+  border: 1px solid var(--surface-border);
+  width: 100%;
+  max-width: 400px;
+}
+
+.mode-toggle {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  padding: 0.5rem;
+  border-radius: 8px;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 20px rgba(var(--primary-color-rgb), 0.3);
 }
 
-.generate-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(var(--primary-color-rgb), 0.4);
+.mode-toggle:hover {
+  background: var(--surface-hover);
 }
 
-.generate-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
+.mode-checkbox {
+  display: none;
+}
+
+.mode-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: var(--text-color);
+  font-size: 0.9rem;
+}
+
+.mode-label i {
+  font-size: 1rem;
+  color: var(--primary-color);
+}
+
+.mode-description {
+  font-size: 0.8rem;
+  color: var(--text-color-secondary);
+  text-align: center;
+  line-height: 1.4;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.generate-button {
+  min-width: 200px;
+}
+
+.compare-costs-btn {
+  min-width: 150px;
 }
 
 .form-status {
-  display: flex;
-  justify-content: center;
+  margin-top: 1rem;
 }
 
 .status-indicator {
@@ -474,19 +730,24 @@ label {
   gap: 0.5rem;
   padding: 0.75rem 1rem;
   border-radius: 8px;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.875rem;
-  font-weight: 500;
   background: var(--surface-section);
   border: 1px solid var(--surface-border);
   color: var(--text-color-secondary);
-  transition: all 0.3s ease;
+  font-size: 0.9rem;
 }
 
 .status-indicator.valid {
-  background: rgba(76, 175, 80, 0.1);
-  border-color: rgba(76, 175, 80, 0.3);
-  color: #4caf50;
+  background: var(--green-50);
+  border-color: var(--green-200);
+  color: var(--green-700);
+}
+
+.status-indicator i {
+  font-size: 1rem;
+}
+
+.job-monitor-section {
+  margin-top: 2rem;
 }
 
 .drop-area {
@@ -538,10 +799,6 @@ label {
 
 .error {
   color: #ff4d4f;
-  margin-left: 1rem;
-}
-
-.compare-costs-btn {
   margin-left: 1rem;
 }
 </style> 

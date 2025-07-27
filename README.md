@@ -350,9 +350,30 @@ The system uses advanced AI models (OpenAI GPT and Anthropic Claude) to generate
 - `POST /api/threat-model/upload` — Upload a diagram file (multipart/form-data, field: `file`)
 - `GET /api/threat-model/files` — List uploaded files
 - `DELETE /api/threat-model/files/{file_id}` — Delete a file by its ID
-- `POST /api/threat-model/generate` — Generate AI-powered threat model
+- `POST /api/threat-model/generate` — Generate AI-powered threat model (synchronous)
+- `POST /api/threat-model/generate-async` — Generate AI-powered threat model (asynchronous)
+- `GET /api/threat-model/jobs/{job_id}` — Get async job status and progress
+- `DELETE /api/threat-model/jobs/{job_id}` — Cancel an async job
+- `GET /api/threat-model/jobs` — List recent jobs
 - `POST /api/threat-model/estimate-cost` — Estimate costs across all AI providers
 - `GET /api/threat-model/providers` — Get available AI providers
+
+#### Example Async Threat Model Generation Request
+```sh
+curl -X POST "http://localhost:8000/api/threat-model/generate-async" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "A web application with user authentication and database storage",
+    "framework": "STRIDE",
+    "file_id": "optional-uploaded-file-id",
+    "llm_provider": "openai"
+  }'
+```
+
+#### Example Job Status Check
+```sh
+curl -X GET "http://localhost:8000/api/threat-model/jobs/{job_id}"
+```
 
 #### Example Threat Model Generation Request
 ```sh
@@ -394,9 +415,37 @@ curl -X POST "http://localhost:8000/api/threat-model/estimate-cost" \
 - **Cost Comparison** - Compare costs across different AI providers
 - **Export Options** - Download threat models in various formats
 - **Form Validation** - Real-time validation and error handling
+- **Async Processing** - Background job processing for complex analyses
+- **Progress Monitoring** - Real-time job status and progress tracking
+- **Result Caching** - Automatic caching to avoid regenerating similar models
+- **Job Management** - View, cancel, and manage async generation jobs
+- **Dual Generation Modes** - Choose between synchronous and asynchronous processing
 
 ---
 
 <div align="center">
 Made with ❤️ by the ThreatForge team
 </div>
+
+## 📚 Documentation
+
+### User Guides
+- **[Quick Start Guide](docs/QUICK_START.md)** - Get up and running in 5 minutes
+- **[Threat Modeling User Guide](docs/THREAT_MODELING_GUIDE.md)** - Comprehensive guide to threat modeling
+- **[Best Practices](docs/BEST_PRACTICES.md)** - Best practices for effective threat modeling
+- **[Sample Threat Models](docs/sample_threat_models.md)** - Examples and templates
+
+### API Documentation
+- **Threat Modeling API**: `POST /api/threat-model/generate`, `POST /api/threat-model/generate-async`
+- **File Management**: `POST /api/threat-model/upload`, `GET /api/threat-model/files`
+- **Job Management**: `GET /api/threat-model/jobs/{job_id}`, `DELETE /api/threat-model/jobs/{job_id}`
+- **Cost Estimation**: `POST /api/threat-model/estimate-cost`
+- **Provider Information**: `GET /api/threat-model/providers`
+
+### Interactive Features
+- **Built-in Tutorial**: Click the "Tutorial" button in the threat modeling interface
+- **Real-time Job Monitoring**: Track async threat model generation progress
+- **Cost Comparison**: Compare costs across different AI providers
+- **Export Options**: Download threat models in multiple formats
+
+---
