@@ -420,6 +420,12 @@ curl -X POST "http://localhost:8000/api/threat-model/estimate-cost" \
 - **Result Caching** - Automatic caching to avoid regenerating similar models
 - **Job Management** - View, cancel, and manage async generation jobs
 - **Dual Generation Modes** - Choose between synchronous and asynchronous processing
+- **Visual Threat Modeling** - Interactive diagram-based threat modeling
+- **Component Library** - Pre-built components for common system elements
+- **Threat Mapping** - Visual threat assignment to system components
+- **Advanced Export** - Professional PDF reports and executive summaries
+- **Compliance Reports** - Framework-specific compliance analysis
+- **Custom Templates** - Configurable export templates and formats
 
 ---
 
@@ -435,6 +441,34 @@ Made with ❤️ by the ThreatForge team
 - **[Best Practices](docs/BEST_PRACTICES.md)** - Best practices for effective threat modeling
 - **[Sample Threat Models](docs/sample_threat_models.md)** - Examples and templates
 
+### Features Overview
+
+#### 🤖 AI-Powered Threat Modeling
+- **Multiple Frameworks**: STRIDE, LINDDUN, PASTA, Attack Trees
+- **AI Providers**: OpenAI GPT and Anthropic Claude integration
+- **Async Processing**: Background job processing with progress tracking
+- **Intelligent Caching**: Automatic result caching for similar requests
+
+#### 🎨 Visual Threat Modeling
+- **Interactive Diagrams**: Drag-and-drop system component creation
+- **Component Library**: Pre-built components for common system elements
+- **Threat Mapping**: Visual threat assignment to system components
+- **Real-time Collaboration**: Multi-user threat modeling sessions
+- **Diagram Export**: Export diagrams in multiple formats
+
+#### 📊 Advanced Export Options
+- **PDF Reports**: Professional PDF reports with executive summaries
+- **Executive Summaries**: High-level summaries for stakeholders
+- **Technical Reports**: Detailed technical analysis for security teams
+- **Compliance Reports**: Compliance-focused reports with controls mapping
+- **Custom Templates**: Configurable export templates and formats
+
+#### 🔄 Workflow Integration
+- **File Upload**: Support for DRAWIO, PNG, JPG, SVG, XML diagrams
+- **Job Monitoring**: Real-time tracking of async threat model generation
+- **Cost Comparison**: Compare costs across different AI providers
+- **Export Integration**: Export to various formats and platforms
+
 ### API Documentation
 - **Threat Modeling API**: `POST /api/threat-model/generate`, `POST /api/threat-model/generate-async`
 - **File Management**: `POST /api/threat-model/upload`, `GET /api/threat-model/files`
@@ -444,8 +478,9 @@ Made with ❤️ by the ThreatForge team
 
 ### Interactive Features
 - **Built-in Tutorial**: Click the "Tutorial" button in the threat modeling interface
+- **Visual Modeling**: Switch between text-based and visual threat modeling
 - **Real-time Job Monitoring**: Track async threat model generation progress
 - **Cost Comparison**: Compare costs across different AI providers
-- **Export Options**: Download threat models in multiple formats
+- **Advanced Export**: Generate professional reports in multiple formats
 
 ---

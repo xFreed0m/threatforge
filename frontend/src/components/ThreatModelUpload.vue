@@ -20,155 +20,239 @@
         </div>
       </div>
     </div>
-    
-    <!-- Threat Model Form -->
-    <div class="threat-model-form cyber-card">
-      <div class="form-header">
+
+    <!-- Modeling Mode Tabs -->
+    <div class="modeling-mode-tabs cyber-card">
+      <div class="tab-buttons">
+        <Button 
+          :class="['tab-button', { active: modelingMode === 'text' }]"
+          @click="modelingMode = 'text'"
+          :label="'Text-Based Modeling'"
+          :icon="'pi pi-pencil'"
+          text
+        />
+        <Button 
+          :class="['tab-button', { active: modelingMode === 'visual' }]"
+          @click="modelingMode = 'visual'"
+          :label="'Visual Modeling'"
+          :icon="'pi pi-sitemap'"
+          text
+        />
+      </div>
+    </div>
+
+    <!-- Text-Based Modeling -->
+    <div v-if="modelingMode === 'text'" class="text-modeling-section">
+      <!-- File Upload Section -->
+      <div class="file-upload-section cyber-card">
         <h3>
-          <i class="pi pi-shield" style="margin-right: 0.5rem; color: var(--primary-color);"></i>
-          Threat Modeling Analysis
+          <i class="pi pi-upload" style="margin-right: 0.5rem; color: var(--primary-color);"></i>
+          Upload System Diagrams
         </h3>
-        <p>Describe your system or select an uploaded diagram for AI-powered threat modeling</p>
-      </div>
-      
-      <div class="form-grid">
-        <div class="field">
-          <label for="content">System Description</label>
-          <Textarea 
-            id="content" 
-            v-model="form.content" 
-            placeholder="Describe the system, architecture, or components you want to analyze for threats..."
-            rows="6"
-            class="form-textarea"
-          />
-        </div>
-        
-        <div class="field">
-          <label for="framework">Framework</label>
-          <Dropdown
-            id="framework"
-            v-model="form.framework"
-            :options="frameworkOptions"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="Select framework"
-            class="form-dropdown"
-          />
-        </div>
-        
-        <div class="field">
-          <label for="file">Uploaded File (Optional)</label>
-          <Dropdown
-            id="file"
-            v-model="form.file_id"
-            :options="fileOptions"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="Select uploaded file (optional)"
-            class="form-dropdown"
-            :disabled="!files.length"
-          />
-        </div>
-        
-        <div class="field">
-          <label for="provider">AI Provider</label>
-          <Dropdown
-            id="provider"
-            v-model="form.llm_provider"
-            :options="availableProviders"
-            :loading="loadingProviders"
-            placeholder="Select AI Provider"
-            class="form-dropdown"
-          />
-        </div>
-      </div>
-      
-      <div class="form-actions">
-        <div class="generation-mode">
-          <label class="mode-toggle">
+        <p>Upload architecture diagrams to enhance your threat model analysis</p>
+
+        <!-- Drag & Drop Area -->
+        <div class="upload-area" 
+             @drop="onDrop"
+             @dragover.prevent
+             @dragenter.prevent>
+          <div class="upload-content">
+            <i class="pi pi-cloud-upload" style="font-size: 3rem; color: var(--primary-color); margin-bottom: 1rem;"></i>
+            <h4>Drag & Drop Files Here</h4>
+            <p>or</p>
+            <Button label="Browse Files" @click="fileInput?.click()" severity="primary" />
             <input 
-              type="checkbox" 
-              v-model="useAsyncMode"
-              class="mode-checkbox"
+              ref="fileInput"
+              type="file" 
+              multiple 
+              :accept="acceptTypes"
+              @change="onFileChange"
+              style="display: none"
             />
-            <span class="mode-label">
-              <i class="pi" :class="useAsyncMode ? 'pi-clock' : 'pi-bolt'"></i>
-              {{ useAsyncMode ? 'Async Mode' : 'Sync Mode' }}
-            </span>
-          </label>
-          <span class="mode-description">
-            {{ useAsyncMode ? 'Generate in background with progress tracking' : 'Generate immediately and wait for result' }}
-          </span>
+            <p class="upload-info">
+              Supported formats: DRAWIO, PNG, JPG, SVG, XML (Max 10MB each)
+            </p>
+          </div>
         </div>
-        
-        <div class="action-buttons">
-          <Button 
-            @click="generateThreatModel" 
-            :loading="generating" 
-            :label="useAsyncMode ? 'Create Async Job' : 'Generate Threat Model'"
-            :icon="useAsyncMode ? 'pi-clock' : 'pi-shield'"
-            :disabled="generating || !isFormValid"
-            class="generate-button"
-          />
-          <Button 
-            @click="compareCosts"
-            label="Compare Costs"
-            icon="pi pi-dollar"
-            class="compare-costs-btn"
-            severity="secondary"
-          />
+
+        <!-- Upload Progress -->
+        <div v-if="uploading" class="upload-progress">
+          <div v-for="(progress, fileName) in uploadProgress" :key="fileName" class="progress-item">
+            <div class="progress-info">
+              <span class="file-name">{{ fileName }}</span>
+              <span class="progress-percent">{{ progress }}%</span>
+            </div>
+            <ProgressBar :value="progress" :showValue="false" />
+          </div>
         </div>
-        
-        <div class="form-status">
-          <div class="status-indicator" :class="{ valid: isFormValid }">
-            <i :class="isFormValid ? 'pi pi-check-circle' : 'pi pi-exclamation-circle'"></i>
-            <span>{{ isFormValid ? 'Form is ready' : 'Please provide system description' }}</span>
+
+        <!-- File List -->
+        <div v-if="files.length > 0" class="file-list">
+          <div class="file-list-header">
+            <h4>Uploaded Files</h4>
+            <div class="file-actions">
+              <Button 
+                v-if="selectedToDelete.length > 0"
+                @click="bulkDelete"
+                icon="pi pi-trash"
+                label="Delete Selected"
+                severity="danger"
+                size="small"
+              />
+            </div>
+          </div>
+          
+          <div class="file-grid">
+            <div v-for="file in files" :key="file.file_id" class="file-card">
+              <div class="file-info">
+                <div class="file-icon">
+                  <i :class="getFileIcon(file.file_type)"></i>
+                </div>
+                <div class="file-details">
+                  <span class="file-name">{{ file.filename }}</span>
+                  <span class="file-meta">{{ file.file_type.toUpperCase() }} • {{ formatSize(file.size) }}</span>
+                </div>
+              </div>
+              <div class="file-actions">
+                <Checkbox v-model="selectedToDelete" :value="file.file_id" :binary="false" />
+                <Button 
+                  @click="deleteFile(file.file_id)"
+                  icon="pi pi-times"
+                  severity="danger"
+                  text
+                  size="small"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-    
-    <!-- File Upload Section -->
-    <div class="file-upload-section cyber-card">
-      <h3>Upload Diagram Files</h3>
-      <form @submit.prevent="handleUpload">
-        <div class="drop-area" @dragover.prevent @drop.prevent="onDrop" @click="fileInput.click()">
-          <input type="file" ref="fileInput" @change="onFileChange" :accept="acceptTypes" multiple style="display:none;" />
-          <span v-if="!selectedFiles.length">Drag & drop files here or click to select</span>
-          <ul v-else>
-            <li v-for="file in selectedFiles" :key="file.name + file.size">
-              {{ file.name }} ({{ formatSize(file.size) }})
-              <span v-if="uploadProgress[file.name] !== undefined">
-                <ProgressBar :value="uploadProgress[file.name]" style="width:100px; margin-left:1rem;" />
-              </span>
-            </li>
-          </ul>
+
+      <!-- Threat Model Form -->
+      <div class="threat-model-form cyber-card">
+        <h3>
+          <i class="pi pi-cog" style="margin-right: 0.5rem; color: var(--primary-color);"></i>
+          Threat Model Configuration
+        </h3>
+        
+        <div class="form-grid">
+          <div class="form-group">
+            <label>System Description</label>
+            <Textarea 
+              v-model="form.content" 
+              placeholder="Describe your system in detail. Include components, data flows, user types, and technologies used..."
+              rows="6"
+              :class="{ 'p-invalid': !isFormValid && !form.content }"
+            />
+            <small class="form-help">
+              Be comprehensive - include user types, key features, technologies, and data types
+            </small>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Framework</label>
+              <Dropdown 
+                v-model="form.framework" 
+                :options="frameworkOptions" 
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Select threat modeling framework"
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Uploaded Diagram (Optional)</label>
+              <Dropdown 
+                v-model="form.file_id" 
+                :options="fileOptions" 
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Select uploaded diagram"
+                :disabled="files.length === 0"
+              />
+            </div>
+
+            <div class="form-group">
+              <label>AI Provider</label>
+              <Dropdown 
+                v-model="form.llm_provider" 
+                :options="availableProviders.map(p => ({ label: p.toUpperCase(), value: p }))"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Select AI provider"
+                :loading="loadingProviders"
+                :disabled="loadingProviders"
+              />
+            </div>
+          </div>
         </div>
-        <Button type="submit" label="Upload" :disabled="!selectedFiles.length || uploading" class="upload-btn" icon="pi pi-upload" />
-        <span v-if="error" class="error">{{ error }}</span>
-      </form>
-      
-      <div v-if="files.length > 0" class="bulk-actions">
-        <Button label="Delete Selected" icon="pi pi-trash" severity="danger" class="bulk-delete-btn" :disabled="!selectedToDelete.length" @click="bulkDelete" />
+
+        <div class="form-actions">
+          <div class="generation-mode">
+            <label class="mode-toggle">
+              <input 
+                type="checkbox" 
+                v-model="useAsyncMode"
+                class="mode-checkbox"
+              />
+              <span class="mode-label">
+                <i class="pi" :class="useAsyncMode ? 'pi-clock' : 'pi-bolt'"></i>
+                {{ useAsyncMode ? 'Async Mode' : 'Sync Mode' }}
+              </span>
+            </label>
+            <span class="mode-description">
+              {{ useAsyncMode ? 'Generate in background with progress tracking' : 'Generate immediately and wait for result' }}
+            </span>
+          </div>
+          
+          <div class="action-buttons">
+            <Button 
+              @click="generateThreatModel" 
+              :loading="generating" 
+              :label="useAsyncMode ? 'Create Async Job' : 'Generate Threat Model'"
+              :icon="useAsyncMode ? 'pi-clock' : 'pi-shield'"
+              :disabled="generating || !isFormValid"
+              class="generate-button"
+            />
+            <Button 
+              @click="compareCosts"
+              label="Compare Costs"
+              icon="pi pi-dollar"
+              class="compare-costs-btn"
+              severity="secondary"
+            />
+            <Button 
+              @click="showAdvancedExport = true"
+              label="Advanced Export"
+              icon="pi pi-download"
+              severity="secondary"
+              :disabled="!currentThreatModel"
+            />
+          </div>
+          
+          <div class="form-status">
+            <div class="status-indicator" :class="{ valid: isFormValid }">
+              <i :class="isFormValid ? 'pi pi-check-circle' : 'pi pi-exclamation-circle'"></i>
+              <span>{{ isFormValid ? 'Form is ready' : 'Please provide system description' }}</span>
+            </div>
+          </div>
+        </div>
       </div>
-      
-      <ul v-if="files.length > 0" class="file-list">
-        <li v-for="file in files" :key="file.file_id" class="file-item">
-          <input type="checkbox" v-model="selectedToDelete" :value="file.file_id" />
-          <span>{{ file.filename }} ({{ file.file_type.toUpperCase() }}, {{ formatSize(file.size) }})</span>
-          <Button icon="pi pi-trash" severity="danger" @click="deleteFile(file.file_id)" class="delete-btn" />
-        </li>
-      </ul>
-      <div v-else-if="!uploading" style="color:#a7f6ff; opacity:0.7;">No files uploaded yet.</div>
+
+      <!-- Threat Model Results -->
+      <div v-if="currentThreatModel" class="threat-model-results cyber-card">
+        <ThreatModelDisplay 
+          :threatModel="currentThreatModel"
+          :formData="form"
+          @regenerate="regenerate"
+        />
+      </div>
     </div>
-    
-    <!-- Threat Model Results -->
-    <div v-if="currentThreatModel" class="threat-model-results cyber-card">
-      <ThreatModelDisplay 
-        :threatModel="currentThreatModel"
-        :formData="form"
-        @regenerate="regenerate"
-      />
+
+    <!-- Visual Modeling -->
+    <div v-if="modelingMode === 'visual'" class="visual-modeling-section">
+      <VisualThreatModeler />
     </div>
 
     <!-- Job Monitor -->
@@ -183,6 +267,12 @@
       :loading="loadingCosts"
       :selectedProvider="form.llm_provider"
       @select-provider="selectProvider"
+    />
+
+    <!-- Advanced Export Dialog -->
+    <AdvancedExport
+      v-model:visible="showAdvancedExport"
+      :threatModel="currentThreatModel"
     />
 
     <!-- Tutorial Modal -->
@@ -207,6 +297,9 @@ import CostComparison from './CostComparison.vue'
 import ThreatModelDisplay from './ThreatModelDisplay.vue'
 import JobMonitor from './JobMonitor.vue'
 import ThreatModelTutorial from './ThreatModelTutorial.vue'
+import Checkbox from 'primevue/checkbox'
+import AdvancedExport from './AdvancedExport.vue'
+import VisualThreatModeler from './VisualThreatModeler.vue'
 
 const toast = useToast()
 
@@ -236,6 +329,10 @@ const loadingCosts = ref(false)
 
 // Async generation mode
 const useAsyncMode = ref(false)
+
+// Modeling mode
+const modelingMode = ref('text')
+const showAdvancedExport = ref(false)
 
 // Tutorial state
 const showTutorial = ref(false)
@@ -336,6 +433,24 @@ function formatSize(bytes) {
   const sizes = ['Bytes', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
+
+function getFileIcon(fileType) {
+  switch (fileType.toLowerCase()) {
+    case 'drawio':
+      return 'pi pi-file-o'
+    case 'png':
+      return 'pi pi-image'
+    case 'jpg':
+    case 'jpeg':
+      return 'pi pi-file-image'
+    case 'svg':
+      return 'pi pi-file-code'
+    case 'xml':
+      return 'pi pi-file-text'
+    default:
+      return 'pi pi-file'
+  }
 }
 
 async function deleteFile(fileId) {
@@ -572,6 +687,64 @@ onMounted(async () => {
   gap: 0.5rem;
 }
 
+.modeling-mode-tabs {
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: var(--surface-card);
+  border-radius: 16px;
+  border: 1px solid var(--surface-border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.tab-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.tab-button {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  border: 1px solid var(--surface-border);
+  background: var(--surface-ground);
+  color: var(--text-color);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tab-button:hover {
+  background: var(--surface-hover);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.tab-button.active {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.tab-button.active:hover {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.text-modeling-section, .visual-modeling-section {
+  padding: 2rem;
+  background: var(--surface-card);
+  border-radius: 16px;
+  border: 1px solid var(--surface-border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+  transition: all 0.3s ease;
+}
+
 .threat-model-form, .file-upload-section, .threat-model-results {
   padding: 2rem;
   background: var(--surface-card);
@@ -607,10 +780,43 @@ onMounted(async () => {
 }
 
 .form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-color);
+}
+
+.form-help {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  color: var(--text-color-secondary);
+  line-height: 1.4;
+}
+
+.p-invalid {
+  border-color: var(--red-500) !important;
+}
+
+.p-invalid:focus {
+  box-shadow: 0 0 0 2px var(--red-200) !important;
 }
 
 .field {
@@ -783,14 +989,87 @@ label {
   padding: 0;
 }
 
-.file-item {
+.file-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.file-list-header h4 {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--text-color);
+  margin: 0;
+}
+
+.file-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.file-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.file-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.5rem;
+  padding: 1rem;
   background: #23244a;
-  border-radius: 6px;
-  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--surface-border);
+  transition: all 0.2s ease;
+}
+
+.file-card:hover {
+  background: var(--surface-hover);
+  border-color: var(--primary-color);
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.file-icon {
+  font-size: 2rem;
+  color: var(--primary-color);
+}
+
+.file-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.file-name {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 150px;
+}
+
+.file-meta {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  color: var(--text-color-secondary);
+  margin-top: 0.25rem;
+}
+
+.file-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .delete-btn {
@@ -800,5 +1079,85 @@ label {
 .error {
   color: #ff4d4f;
   margin-left: 1rem;
+}
+
+.upload-area {
+  border: 2px dashed #6f00ff;
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  color: #a7f6ff;
+  background: #23244a;
+  margin-bottom: 1rem;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px; /* Ensure it's tall enough for content */
+}
+
+.upload-area:hover {
+  border-color: #00fff7;
+}
+
+.upload-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.upload-content h4 {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--text-color);
+  margin: 0;
+}
+
+.upload-content p {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  color: var(--text-color-secondary);
+  margin: 0;
+}
+
+.upload-info {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  color: var(--text-color-secondary);
+  margin-top: 1rem;
+}
+
+.upload-progress {
+  margin-top: 1rem;
+  padding: 0.5rem;
+  background: var(--surface-ground);
+  border-radius: 8px;
+  border: 1px solid var(--surface-border);
+}
+
+.progress-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.progress-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  color: var(--text-color);
+}
+
+.progress-percent {
+  font-weight: 600;
+  color: var(--primary-color);
 }
 </style> 
