@@ -50,6 +50,8 @@
             id="size"
             v-model="form.company_size"
             :options="sizeOptions"
+            optionLabel="label"
+            optionValue="value"
             appendTo="body"
             placeholder="Select company size"
             class="form-dropdown"
@@ -210,15 +212,24 @@ const form = ref({
   llm_provider: null
 })
 
-const sizeOptions = ['small', 'medium', 'large', 'enterprise']
-const threatOptions = ['apt', 'ransomware', 'insider', 'hacktivist', 'cybercriminal']
+const sizeOptions = [
+  { value: 'small', label: 'Small (1-50 employees)' },
+  { value: 'medium', label: 'Medium (51-250 employees)' },
+  { value: 'large', label: 'Large (251-1000 employees)' },
+  { value: 'enterprise', label: 'Enterprise (1000+ employees)' }
+]
+const threatOptions = ['apt', 'ransomware', 'insider', 'hacktivist', 'cybercriminal', 'competitor']
 const technologyOptions = [
   'AWS', 'Azure', 'Google Cloud',
   'Docker', 'Kubernetes',
   'MongoDB', 'PostgreSQL', 'MySQL',
   'Active Directory', 'Office 365',
   'Palo Alto', 'Fortinet', 'CrowdStrike',
-  'Splunk', 'Elastic'
+  'Splunk', 'Elastic',
+  'VMware vSphere', 'Hyper-V',
+  'Exchange Server', 'SharePoint',
+  'Domain Controllers', 'Oracle Database', 'SQL Server',
+  'SAP', 'Cisco networking', 'On-premise file servers'
 ]
 
 const dropdownOpen = ref(false)

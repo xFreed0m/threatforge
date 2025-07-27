@@ -40,6 +40,25 @@ async def test_generate_invalid():
         assert resp.status_code == 422
 
 @pytest.mark.asyncio
+async def test_generate_with_competitor_threat_actor():
+    payload = {
+        "company_name": "TestCo",
+        "industry": "Technology",
+        "company_size": "medium",
+        "technologies": ["AWS", "Kubernetes"],
+        "threat_actor": "competitor",
+        "scenario_type": "espionage",
+        "participants": ["Security Team", "Legal Team"],
+        "duration_hours": 2
+    }
+    async with AsyncClient(app=app, base_url="http://test") as ac:
+        resp = await ac.post("/api/scenarios/generate", json=payload)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "scenario" in data
+        assert "id" in data
+
+@pytest.mark.asyncio
 async def test_estimate_cost():
     payload = {
         "company_name": "TestCo",

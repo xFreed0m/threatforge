@@ -25,6 +25,7 @@ class ThreatActor(str, Enum):
     INSIDER = "insider"
     HACKTIVIST = "hacktivist"
     CYBERCRIMINAL = "cybercriminal"
+    COMPETITOR = "competitor"
 
 
 class ScenarioRequest(BaseModel):
