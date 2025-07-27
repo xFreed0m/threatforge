@@ -3,6 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.scenarios import router as scenarios_router
+from app.api import threat_model
 
 app = FastAPI(
     title="ThreatForge",
@@ -20,6 +21,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(scenarios_router)
+app.include_router(threat_model.router)
 
 @app.get("/")
 async def root() -> dict[str, str]:

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net">
+  <diagram id="sample" name="Page-1">
+    <mxGraphModel>
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="2" value="Threat Actor" style="ellipse;fillColor=#ffcccc;" vertex="1" parent="1">
+          <mxGeometry x="80" y="80" width="80" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="3" value="Asset" style="rounded=1;fillColor=#ccffcc;" vertex="1" parent="1">
+          <mxGeometry x="240" y="80" width="120" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="4" edge="1" source="2" target="3" style="endArrow=block;strokeColor=#000000;" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile> 

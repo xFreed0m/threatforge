@@ -316,6 +316,84 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - AI capabilities powered by [OpenAI](https://openai.com/) and [Anthropic](https://anthropic.com/)
 - Icons from [Heroicons](https://heroicons.com/)
 
+## Threat Modeling File Upload Feature
+
+This feature provides AI-powered threat modeling analysis for cybersecurity systems. Users can upload diagram files or provide text descriptions of systems to generate comprehensive threat models using various frameworks.
+
+### Supported File Types
+- DRAWIO (.drawio) - Diagram files for system architecture
+- PNG (.png) - Image files
+- JPG (.jpg) - Image files  
+- SVG (.svg) - Vector graphics
+- XML (.xml) - XML-based diagrams
+
+### File Size Limit
+- Maximum file size: 10MB
+
+### AI-Powered Threat Modeling
+The system uses advanced AI models (OpenAI GPT and Anthropic Claude) to generate comprehensive threat models based on:
+
+- **System descriptions** - Text-based descriptions of systems, architectures, or components
+- **Uploaded diagrams** - Visual representations of system architecture
+- **Multiple frameworks** - STRIDE, LINDDUN, PASTA, and Attack Trees analysis
+
+### Generated Threat Models Include
+1. **System Overview** - Brief description of the analyzed system
+2. **Asset Identification** - Key assets, data, and components
+3. **Threat Actors** - Potential attackers and their motivations
+4. **Threat Analysis** - Detailed threats using the selected framework
+5. **Risk Assessment** - Threat ratings (High/Medium/Low) based on likelihood and impact
+6. **Mitigation Strategies** - Recommended controls and countermeasures
+7. **Security Recommendations** - Overall security posture improvements
+
+### API Endpoints
+- `POST /api/threat-model/upload` — Upload a diagram file (multipart/form-data, field: `file`)
+- `GET /api/threat-model/files` — List uploaded files
+- `DELETE /api/threat-model/files/{file_id}` — Delete a file by its ID
+- `POST /api/threat-model/generate` — Generate AI-powered threat model
+- `POST /api/threat-model/estimate-cost` — Estimate costs across all AI providers
+- `GET /api/threat-model/providers` — Get available AI providers
+
+#### Example Threat Model Generation Request
+```sh
+curl -X POST "http://localhost:8000/api/threat-model/generate" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "A web application with user authentication and database storage",
+    "framework": "STRIDE",
+    "file_id": "optional-uploaded-file-id",
+    "llm_provider": "openai"
+  }'
+```
+
+#### Example Cost Estimation Request
+```sh
+curl -X POST "http://localhost:8000/api/threat-model/estimate-cost" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "A cloud-based microservices application",
+    "framework": "STRIDE",
+    "llm_provider": "openai"
+  }'
+```
+
+### Frontend Usage
+- Use the "Threat Model Upload" button at the top of the app to switch to the threat modeling interface
+- Upload supported diagram files for additional context (optional)
+- Provide a detailed system description in the text area
+- Select a threat modeling framework (STRIDE, LINDDUN, PASTA, Attack Trees)
+- Choose an AI provider (OpenAI or Anthropic)
+- Generate comprehensive threat models with cost estimation
+- Export results in multiple formats (Text, Markdown, JSON, PDF)
+
+### Features
+- **Drag & Drop Upload** - Easy file upload with visual feedback
+- **Multi-file Support** - Upload and manage multiple diagram files
+- **Bulk Operations** - Select and delete multiple files at once
+- **Progress Tracking** - Real-time upload progress indicators
+- **Cost Comparison** - Compare costs across different AI providers
+- **Export Options** - Download threat models in various formats
+- **Form Validation** - Real-time validation and error handling
 
 ---
 
