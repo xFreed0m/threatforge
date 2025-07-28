@@ -89,7 +89,7 @@
         <!-- File List -->
         <div v-if="files.length > 0" class="file-list">
           <div class="file-list-header">
-            <h4>Uploaded Files</h4>
+            <h4>Uploaded Files ({{ files.length }})</h4>
             <div class="file-actions">
               <Button 
                 v-if="selectedToDelete.length > 0"
@@ -98,6 +98,16 @@
                 label="Delete Selected"
                 severity="danger"
                 size="small"
+              />
+              <Button 
+                @click="clearAllFiles"
+                icon="pi pi-trash"
+                :label="clearingFiles ? 'Clearing...' : 'Clear All'"
+                severity="danger"
+                size="small"
+                outlined
+                :loading="clearingFiles"
+                :disabled="clearingFiles"
               />
             </div>
           </div>
@@ -125,6 +135,12 @@
               </div>
             </div>
           </div>
+        </div>
+        
+        <!-- No Files Message -->
+        <div v-else-if="!uploading && !clearingFiles" class="no-files-message">
+          <i class="pi pi-file-o" style="font-size: 2rem; color: var(--text-color-secondary); margin-bottom: 1rem;"></i>
+          <p>No files uploaded yet. Drag and drop files above or click "Browse Files" to get started.</p>
         </div>
       </div>
 
@@ -262,7 +278,8 @@
 
     <!-- Cost Comparison Dialog -->
     <CostComparison
-      v-model:visible="showCostDialog"
+      :visible="showCostDialog"
+      @update:visible="showCostDialog = $event"
       :estimates="costEstimates"
       :loading="loadingCosts"
       :selectedProvider="form.llm_provider"
@@ -271,7 +288,8 @@
 
     <!-- Advanced Export Dialog -->
     <AdvancedExport
-      v-model:visible="showAdvancedExport"
+      :visible="showAdvancedExport"
+      @update:visible="showAdvancedExport = $event"
       :threatModel="currentThreatModel"
     />
 
@@ -318,6 +336,7 @@ const uploading = ref(false)
 const error = ref(null)
 const fileInput = ref(null)
 const acceptTypes = '.drawio,.png,.jpg,.svg,.xml'
+const clearingFiles = ref(false)
 
 const loadingProviders = ref(true)
 const availableProviders = ref([])
@@ -337,6 +356,86 @@ const showAdvancedExport = ref(false)
 // Tutorial state
 const showTutorial = ref(false)
 
+// Clear files on component mount
+onMounted(async () => {
+  await loadFiles()
+  await loadProviders()
+  
+  // Clear any existing files on app refresh/start
+  if (files.value.length > 0) {
+    await clearAllFiles()
+  }
+})
+
+// Load uploaded files
+async function loadFiles() {
+  try {
+    const response = await axios.get('/api/threat-model/files')
+    files.value = response.data
+  } catch (error) {
+    console.error('Error loading files:', error)
+    files.value = []
+  }
+}
+
+// Load available AI providers
+async function loadProviders() {
+  loadingProviders.value = true
+  try {
+    // Try threat model providers first
+    const response = await axios.get('/api/threat-model/providers')
+    availableProviders.value = response.data
+  } catch (error) {
+    console.log('Threat model providers not available, trying scenario providers...')
+    try {
+      // Fallback to scenario providers
+      const response = await axios.get('/api/scenarios/providers')
+      availableProviders.value = response.data
+    } catch (fallbackError) {
+      console.log('No providers available, using defaults...')
+      // Default providers if both endpoints fail
+      availableProviders.value = ['openai', 'anthropic']
+    }
+  } finally {
+    loadingProviders.value = false
+  }
+}
+
+  // Clear all uploaded files
+  async function clearAllFiles() {
+    // Show confirmation dialog
+    if (!confirm('Are you sure you want to clear all uploaded files? This action cannot be undone.')) {
+      return
+    }
+    
+    clearingFiles.value = true
+    try {
+      // Use the new clear all endpoint
+      await axios.delete('/api/threat-model/files/clear')
+      
+      // Clear local state
+      files.value = []
+      selectedToDelete.value = []
+      
+      toast.add({
+        severity: 'success',
+        summary: 'Files Cleared',
+        detail: 'All uploaded files have been cleared',
+        life: 3000
+      })
+    } catch (error) {
+      console.error('Error clearing files:', error)
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Failed to clear files',
+        life: 3000
+      })
+    } finally {
+      clearingFiles.value = false
+    }
+  }
+
 const frameworkOptions = [
   { label: 'STRIDE', value: 'STRIDE' },
   { label: 'LINDDUN', value: 'LINDDUN' },
@@ -354,21 +453,6 @@ const fileOptions = computed(() => {
     value: file.file_id
   }))
 })
-
-async function fetchFiles() {
-  try {
-    const response = await axios.get('/api/threat-model/files')
-    files.value = response.data
-  } catch (error) {
-    console.error('Failed to fetch files:', error)
-    toast.add({
-      severity: 'error',
-      summary: 'Error',
-      detail: 'Failed to load uploaded files',
-      life: 3000
-    })
-  }
-}
 
 async function handleUpload() {
   if (!selectedFiles.value.length) return
@@ -610,28 +694,6 @@ The system uses:
     life: 5000
   })
 }
-
-onMounted(async () => {
-  await fetchFiles()
-  
-  try {
-    const response = await axios.get('/api/threat-model/providers')
-    availableProviders.value = response.data.providers
-    if (availableProviders.value.length > 0) {
-      form.value.llm_provider = availableProviders.value[0]
-    }
-  } catch (error) {
-    console.error('Failed to load providers:', error)
-    toast.add({
-      severity: 'error',
-      summary: 'Error',
-      detail: 'Failed to load AI providers',
-      life: 3000
-    })
-  } finally {
-    loadingProviders.value = false
-  }
-})
 </script>
 
 <style scoped>
@@ -1159,5 +1221,20 @@ label {
 .progress-percent {
   font-weight: 600;
   color: var(--primary-color);
+}
+
+.no-files-message {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-color-secondary);
+  font-size: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.no-files-message i {
+  margin-bottom: 1rem;
 }
 </style> 

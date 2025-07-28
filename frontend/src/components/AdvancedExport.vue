@@ -1,6 +1,7 @@
 <template>
   <div class="advanced-export">
-    <Dialog v-model:visible="visible" 
+    <Dialog :visible="visible" 
+            @update:visible="$emit('update:visible', $event)"
             header="Advanced Export Options" 
             :style="{ width: '800px' }"
             :modal="true">

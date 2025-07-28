@@ -155,7 +155,8 @@
         </div>
       </div>
       <CostComparison
-        v-model:visible="showCostDialog"
+        :visible="showCostDialog"
+        @update:visible="showCostDialog = $event"
         :estimates="costEstimates"
         :loading="loadingCosts"
         :selectedProvider="form.llm_provider"

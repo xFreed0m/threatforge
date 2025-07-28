@@ -240,11 +240,37 @@ async def upload_diagram(file: UploadFile = File(...)):
 
 @router.get("/files", response_model=List[FileUploadResponse])
 async def list_files():
+    """List all uploaded files."""
     return file_service.list_files()
+
+@router.delete("/files/clear")
+async def clear_all_files():
+    """Clear all uploaded files.
+    
+    Returns:
+        Success message if all files were cleared.
+    """
+    try:
+        # Get all files
+        files = file_service.list_files()
+        
+        # Delete each file
+        for file in files:
+            try:
+                file_service.delete_file(file.file_id)
+            except Exception as e:
+                logger.warning(f"Failed to delete file {file.file_id}: {e}")
+        
+        return {"detail": f"Cleared {len(files)} files successfully"}
+    except Exception as e:
+        logger.exception(f"Error clearing files: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/files/{file_id}")
 async def delete_file(file_id: str):
-    success = file_service.delete_file(file_id)
-    if not success:
+    """Delete a specific uploaded file."""
+    try:
+        file_service.delete_file(file_id)
+    except FileNotFoundError:
         raise HTTPException(status_code=404, detail="File not found")
     return {"detail": "File deleted"} 

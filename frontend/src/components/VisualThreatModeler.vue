@@ -181,7 +181,8 @@
     </div>
 
     <!-- Add Component Dialog -->
-    <Dialog v-model:visible="showComponentDialog" 
+    <Dialog :visible="showComponentDialog" 
+            @update:visible="showComponentDialog = $event"
             header="Add Component" 
             :style="{ width: '500px' }"
             :modal="true">
@@ -215,7 +216,8 @@
     </Dialog>
 
     <!-- Threat Mapping Dialog -->
-    <Dialog v-model:visible="showThreatDialog" 
+    <Dialog :visible="showThreatDialog" 
+            @update:visible="showThreatDialog = $event"
             header="Map Threats to Components" 
             :style="{ width: '800px' }"
             :modal="true">
