@@ -227,7 +227,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
 import Checkbox from 'primevue/checkbox'
@@ -251,6 +251,9 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 const toast = useToast()
+
+// Error handling
+const error = ref(null)
 
 // Export type
 const selectedType = ref('pdf')
@@ -315,14 +318,72 @@ const metadata = ref({
 // Generation state
 const generating = ref(false)
 
+// Validation
+const validationErrors = ref({})
+
+// Computed properties
+const isFormValid = computed(() => {
+  return metadata.value.title.trim() && 
+         metadata.value.author.trim() && 
+         Object.keys(validationErrors.value).length === 0
+})
+
+const hasValidConfiguration = computed(() => {
+  return config.value.includeOverview || 
+         config.value.includeThreats || 
+         config.value.includeRisks || 
+         config.value.includeMitigations
+})
+
 // Methods
+const clearError = () => {
+  error.value = null
+}
+
+const handleError = (err, context = 'Operation') => {
+  console.error(`${context} error:`, err)
+  error.value = `${context} failed: ${err.message || err}`
+  toast.add({
+    severity: 'error',
+    summary: 'Error',
+    detail: error.value,
+    life: 5000
+  })
+}
+
+const validateForm = () => {
+  validationErrors.value = {}
+  
+  if (!metadata.value.title.trim()) {
+    validationErrors.value.title = 'Report title is required'
+  } else if (metadata.value.title.length > 100) {
+    validationErrors.value.title = 'Report title must be less than 100 characters'
+  }
+  
+  if (!metadata.value.author.trim()) {
+    validationErrors.value.author = 'Author name is required'
+  } else if (metadata.value.author.length > 50) {
+    validationErrors.value.author = 'Author name must be less than 50 characters'
+  }
+  
+  if (!hasValidConfiguration.value) {
+    validationErrors.value.config = 'At least one section must be selected'
+  }
+  
+  return Object.keys(validationErrors.value).length === 0
+}
+
 const closeDialog = () => {
   emit('close')
 }
 
 const formatDate = (date) => {
   if (!date) return 'Not specified'
-  return new Date(date).toLocaleDateString()
+  try {
+    return new Date(date).toLocaleDateString()
+  } catch (err) {
+    return 'Invalid date'
+  }
 }
 
 const getExportTypeLabel = (type) => {
@@ -335,8 +396,42 @@ const getExportTypeLabel = (type) => {
   return labels[type] || type
 }
 
+const sanitizeContent = (content) => {
+  // Basic content sanitization to prevent XSS
+  if (typeof content !== 'string') return ''
+  
+  return content
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+    .replace(/javascript:/gi, '')
+    .replace(/on\w+\s*=/gi, '')
+    .trim()
+}
+
+const validateExportSize = (content) => {
+  const size = new Blob([content]).size
+  const maxSize = 50 * 1024 * 1024 // 50MB limit
+  
+  if (size > maxSize) {
+    throw new Error(`Export file too large (${Math.round(size / 1024 / 1024)}MB). Maximum size is 50MB.`)
+  }
+  
+  return true
+}
+
 const generateReport = async () => {
+  if (!validateForm()) {
+    toast.add({
+      severity: 'error',
+      summary: 'Validation Error',
+      detail: 'Please fix validation errors before generating report',
+      life: 3000
+    })
+    return
+  }
+  
   generating.value = true
+  error.value = null
   
   try {
     // Simulate report generation
@@ -363,7 +458,12 @@ const generateReport = async () => {
         reportContent = generateComplianceReport()
         fileName = `compliance-report-${Date.now()}.pdf`
         break
+      default:
+        throw new Error('Invalid export type')
     }
+    
+    // Validate export size
+    validateExportSize(reportContent)
     
     // Download the report
     downloadReport(reportContent, fileName)
@@ -377,38 +477,39 @@ const generateReport = async () => {
     
     closeDialog()
   } catch (error) {
-    console.error('Error generating report:', error)
-    toast.add({
-      severity: 'error',
-      summary: 'Error',
-      detail: 'Failed to generate report',
-      life: 3000
-    })
+    handleError(error, 'Report generation')
   } finally {
     generating.value = false
   }
 }
 
 const generatePDFReport = () => {
-  // This would integrate with a PDF generation library like jsPDF
+  const sanitizedTitle = sanitizeContent(metadata.value.title)
+  const sanitizedAuthor = sanitizeContent(metadata.value.author)
+  const sanitizedOrganization = sanitizeContent(metadata.value.organization)
+  
   return {
     type: 'pdf',
     content: {
-      title: metadata.value.title,
-      author: metadata.value.author,
+      title: sanitizedTitle,
+      author: sanitizedAuthor,
+      organization: sanitizedOrganization,
       date: metadata.value.date,
       sections: getReportSections(),
-      config: config.value
+      config: config.value,
+      threatModel: props.threatModel ? sanitizeThreatModel(props.threatModel) : null
     }
   }
 }
 
 const generateExecutiveSummary = () => {
+  const sanitizedTitle = sanitizeContent(metadata.value.title)
+  
   return {
     type: 'executive',
     content: {
-      title: `${metadata.value.title} - Executive Summary`,
-      author: metadata.value.author,
+      title: `${sanitizedTitle} - Executive Summary`,
+      author: sanitizeContent(metadata.value.author),
       date: metadata.value.date,
       level: executiveConfig.value.level,
       focusAreas: executiveConfig.value.focusAreas,
@@ -418,29 +519,47 @@ const generateExecutiveSummary = () => {
 }
 
 const generateTechnicalReport = () => {
+  const sanitizedTitle = sanitizeContent(metadata.value.title)
+  
   return {
     type: 'technical',
     content: {
-      title: `${metadata.value.title} - Technical Analysis`,
-      author: metadata.value.author,
+      title: `${sanitizedTitle} - Technical Analysis`,
+      author: sanitizeContent(metadata.value.author),
       date: metadata.value.date,
       sections: getTechnicalSections(),
-      config: config.value
+      config: config.value,
+      threatModel: props.threatModel ? sanitizeThreatModel(props.threatModel) : null
     }
   }
 }
 
 const generateComplianceReport = () => {
+  const sanitizedTitle = sanitizeContent(metadata.value.title)
+  
   return {
     type: 'compliance',
     content: {
-      title: `${metadata.value.title} - Compliance Analysis`,
-      author: metadata.value.author,
+      title: `${sanitizedTitle} - Compliance Analysis`,
+      author: sanitizeContent(metadata.value.author),
       date: metadata.value.date,
       framework: complianceConfig.value.framework,
       includeControls: complianceConfig.value.includeControls,
       sections: getComplianceSections()
     }
+  }
+}
+
+const sanitizeThreatModel = (threatModel) => {
+  if (!threatModel) return null
+  
+  return {
+    id: threatModel.id,
+    framework: sanitizeContent(threatModel.framework),
+    provider_used: sanitizeContent(threatModel.provider_used),
+    estimated_cost: threatModel.estimated_cost,
+    content_analyzed: sanitizeContent(threatModel.content_analyzed),
+    threat_model: sanitizeContent(threatModel.threat_model)
   }
 }
 
@@ -507,16 +626,28 @@ const generateExecutiveContent = () => {
 }
 
 const downloadReport = (reportContent, fileName) => {
-  // For now, we'll create a JSON file as a placeholder
-  // In a real implementation, this would generate actual PDF/Word documents
-  const blob = new Blob([JSON.stringify(reportContent, null, 2)], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = fileName
-  a.click()
-  URL.revokeObjectURL(url)
+  try {
+    // For now, we'll create a JSON file as a placeholder
+    // In a real implementation, this would generate actual PDF/Word documents
+    const blob = new Blob([JSON.stringify(reportContent, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = fileName
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch (err) {
+    handleError(err, 'Download')
+  }
 }
+
+// Watch for changes and validate
+watch([metadata, config], () => {
+  validateForm()
+}, { deep: true })
+
+// Initialize validation on mount
+validateForm()
 </script>
 
 <style scoped>

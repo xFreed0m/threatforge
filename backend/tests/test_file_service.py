@@ -36,11 +36,12 @@ def test_allowed_file_type():
         file_service.allowed_file_type("malware.exe")
 
 def test_save_upload_and_list():
-    file = DummyUploadFile("diagram.drawio", b"<xml>drawio</xml>")
+    # Use proper XML content that matches validation expectations
+    file = DummyUploadFile("diagram.drawio", b"<?xml version='1.0' encoding='UTF-8'?><mxfile></mxfile>")
     meta = file_service.save_upload(file)
     assert meta.filename == "diagram.drawio"
     assert meta.file_type == SupportedFileTypes.DRAWIO
-    assert meta.size == len(b"<xml>drawio</xml>")
+    assert meta.size == len(b"<?xml version='1.0' encoding='UTF-8'?><mxfile></mxfile>")
     files = file_service.list_files()
     assert any(f.file_id == meta.file_id for f in files)
 
@@ -50,8 +51,11 @@ def test_save_upload_too_large():
         file_service.save_upload(file)
 
 def test_delete_file():
-    file = DummyUploadFile("diagram.svg", b"<svg></svg>")
+    # Use proper SVG content that matches validation expectations
+    file = DummyUploadFile("diagram.svg", b"<svg xmlns='http://www.w3.org/2000/svg'></svg>")
     meta = file_service.save_upload(file)
     assert file_service.delete_file(meta.file_id) is True
-    assert file_service.delete_file(meta.file_id) is False
+    # Test that deleting a non-existent file raises FileNotFoundError
+    with pytest.raises(FileNotFoundError):
+        file_service.delete_file(meta.file_id)
     assert all(f.file_id != meta.file_id for f in file_service.list_files()) 

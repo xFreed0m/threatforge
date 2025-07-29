@@ -83,7 +83,7 @@ Format the response in clear sections with actionable insights."""
         now = datetime.now()
         
         # Check cache first
-        cache_key = request.cache_key or self._generate_cache_key(request)
+        cache_key = getattr(request, 'cache_key', None) or self._generate_cache_key(request)
         with self.cache_lock:
             if cache_key in self.cache:
                 # Return cached result immediately

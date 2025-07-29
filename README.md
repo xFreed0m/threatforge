@@ -471,7 +471,7 @@ Made with ❤️ by the ThreatForge team
 
 ### API Documentation
 - **Threat Modeling API**: `POST /api/threat-model/generate`, `POST /api/threat-model/generate-async`
-- **File Management**: `POST /api/threat-model/upload`, `GET /api/threat-model/files`
+- **File Management**: `POST /api/threat-model/upload`, `GET /api/threat-model/files`, `DELETE /api/threat-model/files/clear`
 - **Job Management**: `GET /api/threat-model/jobs/{job_id}`, `DELETE /api/threat-model/jobs/{job_id}`
 - **Cost Estimation**: `POST /api/threat-model/estimate-cost`
 - **Provider Information**: `GET /api/threat-model/providers`
