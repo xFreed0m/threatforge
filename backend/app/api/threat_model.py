@@ -468,15 +468,18 @@ async def cancel_job(job_id: str):
         raise HTTPException(status_code=500, detail="Failed to cancel job")
 
 @router.get("/jobs", response_model=List[JobStatusResponse])
-async def list_jobs():
-    """List all jobs.
+async def list_jobs(limit: int = 50):
+    """List recent jobs.
     
+    Args:
+        limit: Maximum number of jobs to return (default: 50)
+        
     Returns:
         List of JobStatusResponse objects
     """
     try:
-        jobs = job_service.list_jobs()
-        logger.info(f"Retrieved {len(jobs)} jobs")
+        jobs = job_service.list_jobs(limit=limit)
+        logger.info(f"Retrieved {len(jobs)} jobs (limit: {limit})")
         return jobs
     except Exception as e:
         logger.exception(f"Error listing jobs: {e}")
