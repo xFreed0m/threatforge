@@ -113,7 +113,7 @@ class ThreatModelRequest(BaseModel):
     @field_validator('framework')
     @classmethod
     def validate_framework(cls, v):
-        valid_frameworks = ['STRIDE', 'LINDDUN', 'PASTA', 'Attack Trees']
+        valid_frameworks = ['STRIDE', 'LINDDUN', 'PASTA', 'Attack Trees', 'ATTACK_TREES']
         if v not in valid_frameworks:
             raise ValueError(f'Invalid framework. Must be one of: {", ".join(valid_frameworks)}')
         return v
