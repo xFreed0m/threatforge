@@ -333,6 +333,9 @@ async def generate_threat_model(
                 file_exists = any(f.file_id == request.file_id for f in files)
                 if not file_exists:
                     raise HTTPException(status_code=404, detail="File not found")
+            except HTTPException:
+                # Re-raise HTTP exceptions (like 404 File not found)
+                raise
             except Exception as e:
                 logger.warning(f"Error accessing file {request.file_id}: {e}")
                 # Continue without file content
