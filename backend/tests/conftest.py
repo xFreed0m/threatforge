@@ -25,8 +25,9 @@ def mock_llm(monkeypatch):
         def estimate_cost(self, prompt):
             return 0.0123
     
-    # Mock the LLM factory
-    monkeypatch.setattr('app.services.llm_factory.LLMFactory.create', lambda provider: MockLLM())
+    # Mock the LLM factory to use the existing MockLLMService
+    from app.services.llm_service import MockLLMService
+    monkeypatch.setattr('app.services.llm_factory.LLMFactory.create', lambda provider: MockLLMService())
     monkeypatch.setattr('app.services.llm_factory.LLMFactory.get_available_providers', lambda: ['openai', 'anthropic'])
     
     # Mock the job service to return proper responses
