@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <!-- Animated SVG cyberpunk logo -->
+    <!-- Animated SVG cyberpunk logo and switch button -->
     <div class="logo-bar" style="display: flex; align-items: center; justify-content: center; margin-top: 2.5rem;">
       <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" class="cyber-logo">
         <rect x="10" y="10" width="60" height="60" rx="14" fill="#181a2a" stroke="#6f00ff" stroke-width="3"/>
@@ -14,43 +14,55 @@
         <h2 style="margin: 0; font-size: 2.2rem;">ThreatForge</h2>
         <div style="color: #a7f6ff; font-size: 1.1rem; letter-spacing: 1px;">AI-powered cybersecurity tabletop exercise generator</div>
       </div>
+      <Button
+        :label="showThreatModel ? 'Scenario Generation' : 'Threat Model Upload'"
+        class="switch-feature-btn"
+        style="margin-left: 2rem; height: 2.5rem; align-self: flex-start;"
+        @click="showThreatModel = !showThreatModel"
+        severity="help"
+        data-testid="threat-model-btn"
+      />
     </div>
-    <!-- Main scenario form card -->
     <div class="cyber-card">
-      <Button 
-        icon="pi pi-history" 
-        label="History" 
-        class="history-toggle-btn" 
-        @click="showHistory = !showHistory"
-        severity="secondary"
-        style="margin-bottom: 1rem;"
-      />
-      <ScenarioHistory 
-        v-if="showHistory" 
-        @load-scenario="handleLoadScenario"
-      />
-      <ScenarioForm 
-        @scenario-generated="handleGenerate" 
-        :generating="generating"
-      />
-      <ProgressSpinner 
-        v-if="generating" 
-        style="width: 50px; height: 50px; margin: 2rem auto; display: block;"
-      />
-      <div v-if="error" class="error">
-        <i class="pi pi-exclamation-triangle"></i> 
-        <span>{{ error }}</span>
-      </div>
-      <div v-if="currentScenario">
-        <ScenarioDisplay 
-          :scenario="currentScenario"
-          :formData="currentFormData"
-          @regenerate="regenerate"
+      <template v-if="showThreatModel">
+        <ThreatModelUpload />
+      </template>
+      <template v-else>
+        <Button 
+          icon="pi pi-history" 
+          label="History" 
+          class="history-toggle-btn" 
+          @click="showHistory = !showHistory"
+          severity="secondary"
+          style="margin-bottom: 1rem;"
         />
-      </div>
-      <div v-else-if="!generating && !error">
-        <p style="text-align:center; color:#a7f6ff; opacity:0.7;">No scenario generated yet.</p>
-      </div>
+        <ScenarioHistory 
+          v-if="showHistory" 
+          @load-scenario="handleLoadScenario"
+        />
+        <ScenarioForm 
+          @scenario-generated="handleGenerate" 
+          :generating="generating"
+        />
+        <ProgressSpinner 
+          v-if="generating" 
+          style="width: 50px; height: 50px; margin: 2rem auto; display: block;"
+        />
+        <div v-if="error" class="error">
+          <i class="pi pi-exclamation-triangle"></i> 
+          <span>{{ error }}</span>
+        </div>
+        <div v-if="currentScenario">
+          <ScenarioDisplay 
+            :scenario="currentScenario"
+            :formData="currentFormData"
+            @regenerate="regenerate"
+          />
+        </div>
+        <div v-else-if="!generating && !error">
+          <p style="text-align:center; color:#a7f6ff; opacity:0.7;">No scenario generated yet.</p>
+        </div>
+      </template>
     </div>
   </div>
 </template>
@@ -64,6 +76,7 @@ import ScenarioForm from './components/ScenarioForm.vue'
 import ScenarioDisplay from './components/ScenarioDisplay.vue'
 import ScenarioHistory from './components/ScenarioHistory.vue'
 import { useToast } from 'primevue/usetoast'
+import ThreatModelUpload from './components/ThreatModelUpload.vue'
 
 console.log('App.vue: Starting script setup')
 console.log('App.vue: ScenarioForm component imported:', ScenarioForm)
@@ -74,6 +87,7 @@ const error = ref(null)
 const isDark = ref(true)
 const generating = ref(false)
 const showHistory = ref(false)
+const showThreatModel = ref(false)
 const toast = useToast()
 
 onMounted(() => {
@@ -526,6 +540,19 @@ body::after {
 .history-toggle-btn {
   float: right;
   margin-top: 1rem;
+}
+
+.switch-feature-btn {
+  background: linear-gradient(90deg, #6f00ff 0%, #00fff7 100%);
+  color: #181a2a;
+  font-weight: 600;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  transition: background 0.2s;
+}
+.switch-feature-btn:hover {
+  background: linear-gradient(90deg, #00fff7 0%, #6f00ff 100%);
+  color: #fff;
 }
 </style>
 

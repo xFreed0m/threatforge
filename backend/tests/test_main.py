@@ -16,3 +16,71 @@ def test_health():
     response = client.get("/health")
     assert response.status_code == 200
     assert response.json()["status"] == "healthy"
+
+def test_upload_list_delete_file(client):
+    # Prepare a small PNG file in memory
+    file_content = b"\x89PNG\r\n\x1a\n" + b"0" * 100  # minimal PNG header + data
+    files = {"file": ("test.png", file_content, "image/png")}
+    # Upload
+    response = client.post("/api/threat-model/upload", files=files)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["filename"] == "test.png"
+    assert data["file_type"] == "png"
+    file_id = data["file_id"]
+    # List
+    response = client.get("/api/threat-model/files")
+    assert response.status_code == 200
+    files_list = response.json()
+    assert any(f["file_id"] == file_id for f in files_list)
+    # Delete
+    response = client.delete(f"/api/threat-model/files/{file_id}")
+    assert response.status_code == 200
+    # Confirm deletion
+    response = client.get("/api/threat-model/files")
+    assert all(f["file_id"] != file_id for f in response.json())
+
+def test_upload_invalid_type(client):
+    file_content = b"not a real file"
+    files = {"file": ("test.exe", file_content, "application/octet-stream")}
+    response = client.post("/api/threat-model/upload", files=files)
+    assert response.status_code == 400
+    assert "Unsupported file type" in response.json()["detail"]
+
+def test_upload_too_large(client):
+    file_content = b"0" * (10 * 1024 * 1024 + 1)  # 10MB + 1 byte
+    files = {"file": ("big.png", file_content, "image/png")}
+    response = client.post("/api/threat-model/upload", files=files)
+    assert response.status_code == 413
+    assert "File too large" in response.json()["detail"]
+
+def test_clear_all_files():
+    """Test clearing all uploaded files."""
+    # First upload some files
+    files = [
+        ("test1.drawio", b"<mxfile>test1</mxfile>"),
+        ("test2.png", b"fake png data"),
+        ("test3.svg", b"<svg>test3</svg>")
+    ]
+    
+    for filename, content in files:
+        response = client.post(
+            "/api/threat-model/upload",
+            files={"file": (filename, content)}
+        )
+        assert response.status_code == 200
+    
+    # Verify files were uploaded
+    response = client.get("/api/threat-model/files")
+    assert response.status_code == 200
+    assert len(response.json()) == 3
+    
+    # Clear all files
+    response = client.delete("/api/threat-model/files/clear")
+    assert response.status_code == 200
+    assert "Cleared 3 files successfully" in response.json()["detail"]
+    
+    # Verify files were cleared
+    response = client.get("/api/threat-model/files")
+    assert response.status_code == 200
+    assert len(response.json()) == 0

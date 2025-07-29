@@ -34,3 +34,4 @@ dist/
 /data/
 /logs/
 .env
+uploads/
