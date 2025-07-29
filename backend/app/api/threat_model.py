@@ -420,10 +420,7 @@ async def get_job_status(job_id: str):
         HTTPException: If job not found
     """
     try:
-        # Validate job_id format
-        if not re.match(r'^[a-f0-9\-]+$', job_id):
-            raise HTTPException(status_code=400, detail="Invalid job ID format")
-        
+        # Check if job exists first
         status = job_service.get_job_status(job_id)
         if not status:
             raise HTTPException(status_code=404, detail="Job not found")

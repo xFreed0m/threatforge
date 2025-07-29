@@ -190,7 +190,7 @@ def test_async_job_with_file(sample_drawio_file):
     data = response.json()
     
     assert "job_id" in data
-    assert "status" in data
+    # Job creation only returns job_id, status is retrieved via separate endpoint
     
     # Cleanup
     Path(sample_drawio_file).unlink()

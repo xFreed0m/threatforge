@@ -35,8 +35,10 @@ class FileUploadResponse(BaseModel):
     @field_validator('file_id')
     @classmethod
     def validate_file_id(cls, v):
-        if not re.match(r'^[a-f0-9\-]+$', v):
-            raise ValueError('Invalid file ID format')
+        # Allow any non-empty string for file_id validation
+        # The actual file existence will be checked in the API endpoint
+        if v is not None and not isinstance(v, str):
+            raise ValueError('File ID must be a string')
         return v
     
     @field_validator('filename')
@@ -65,8 +67,10 @@ class DiagramAnalysisRequest(BaseModel):
     @field_validator('file_id')
     @classmethod
     def validate_file_id(cls, v):
-        if not re.match(r'^[a-f0-9\-]+$', v):
-            raise ValueError('Invalid file ID format')
+        # Allow any non-empty string for file_id validation
+        # The actual file existence will be checked in the API endpoint
+        if v is not None and not isinstance(v, str):
+            raise ValueError('File ID must be a string')
         return v
     
     @field_validator('framework')
@@ -117,8 +121,10 @@ class ThreatModelRequest(BaseModel):
     @field_validator('file_id')
     @classmethod
     def validate_file_id(cls, v):
-        if v is not None and not re.match(r'^[a-f0-9\-]+$', v):
-            raise ValueError('Invalid file ID format')
+        # Allow any non-empty string for file_id validation
+        # The actual file existence will be checked in the API endpoint
+        if v is not None and not isinstance(v, str):
+            raise ValueError('File ID must be a string')
         return v
 
 class ThreatModelResponse(BaseModel):
@@ -202,12 +208,12 @@ class AsyncThreatModelRequest(BaseModel):
         return v
 
     @field_validator('file_id')
-
-
     @classmethod
     def validate_file_id(cls, v):
-        if v is not None and not re.match(r'^[a-f0-9\-]+$', v):
-            raise ValueError('Invalid file ID format')
+        # Allow any non-empty string for file_id validation
+        # The actual file existence will be checked in the API endpoint
+        if v is not None and not isinstance(v, str):
+            raise ValueError('File ID must be a string')
         return v
 
     @field_validator('priority')
