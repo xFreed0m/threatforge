@@ -128,7 +128,7 @@
              }"
              @click.stop="selectComponent(component)"
              @mousedown="startDrag(component, $event)"
-             @contextmenu="showContextMenu(component, $event)"
+                             @contextmenu="handleContextMenu(component, $event)"
              draggable="true">
           
           <div class="component-header">
@@ -900,7 +900,7 @@ const resetZoom = () => {
 }
 
 // Context menu
-const showContextMenu = (component, event) => {
+const handleContextMenu = (component, event) => {
   event.preventDefault()
   contextMenuPosition.value = { x: event.clientX, y: event.clientY }
   selectedComponent.value = component
