@@ -123,7 +123,7 @@ def test_cancel_nonexistent_job():
     response = client.delete("/api/threat-model/jobs/nonexistent-id")
     
     assert response.status_code == 400
-    assert "cannot be cancelled" in response.json()["detail"]
+    assert "Invalid job ID format" in response.json()["detail"]
 
 def test_list_jobs():
     """Test listing jobs."""

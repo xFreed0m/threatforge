@@ -51,7 +51,7 @@ def test_upload_too_large(client):
     file_content = b"0" * (10 * 1024 * 1024 + 1)  # 10MB + 1 byte
     files = {"file": ("big.png", file_content, "image/png")}
     response = client.post("/api/threat-model/upload", files=files)
-    assert response.status_code == 400
+    assert response.status_code == 413
     assert "File too large" in response.json()["detail"]
 
 def test_clear_all_files():

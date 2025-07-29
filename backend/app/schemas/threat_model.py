@@ -3,7 +3,7 @@
 from datetime import datetime
 from enum import Enum
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 import re
 
 class SupportedFileTypes(str, Enum):
@@ -32,13 +32,15 @@ class FileUploadResponse(BaseModel):
     content_hash: Optional[str] = Field(None, description="SHA-256 hash of file content")
     file_path: Optional[str] = Field(None, description="Path to stored file")
     
-    @validator('file_id')
+    @field_validator('file_id')
+    @classmethod
     def validate_file_id(cls, v):
         if not re.match(r'^[a-f0-9\-]+$', v):
             raise ValueError('Invalid file ID format')
         return v
     
-    @validator('filename')
+    @field_validator('filename')
+    @classmethod
     def validate_filename(cls, v):
         if len(v) > 255:
             raise ValueError('Filename too long')
@@ -46,7 +48,8 @@ class FileUploadResponse(BaseModel):
             raise ValueError('Filename contains invalid characters')
         return v
     
-    @validator('size')
+    @field_validator('size')
+    @classmethod
     def validate_size(cls, v):
         if v <= 0:
             raise ValueError('File size must be positive')
@@ -59,13 +62,15 @@ class DiagramAnalysisRequest(BaseModel):
     file_id: str = Field(..., description="File ID to analyze")
     framework: str = Field(default="STRIDE", description="Threat modeling framework")
     
-    @validator('file_id')
+    @field_validator('file_id')
+    @classmethod
     def validate_file_id(cls, v):
         if not re.match(r'^[a-f0-9\-]+$', v):
             raise ValueError('Invalid file ID format')
         return v
     
-    @validator('framework')
+    @field_validator('framework')
+    @classmethod
     def validate_framework(cls, v):
         valid_frameworks = ['STRIDE', 'LINDDUN', 'PASTA', 'Attack Trees', 'ATTACK_TREES']
         if v not in valid_frameworks:
@@ -79,7 +84,8 @@ class ThreatModelRequest(BaseModel):
     file_id: Optional[str] = Field(None, description="Optional file ID for diagram analysis")
     llm_provider: Optional[str] = Field(None, description="LLM provider to use")
     
-    @validator('content')
+    @field_validator('content')
+    @classmethod
     def validate_content(cls, v):
         if not v or not v.strip():
             raise ValueError('Content cannot be empty')
@@ -100,14 +106,16 @@ class ThreatModelRequest(BaseModel):
         
         return v.strip()
     
-    @validator('framework')
+    @field_validator('framework')
+    @classmethod
     def validate_framework(cls, v):
         valid_frameworks = ['STRIDE', 'LINDDUN', 'PASTA', 'Attack Trees']
         if v not in valid_frameworks:
             raise ValueError(f'Invalid framework. Must be one of: {", ".join(valid_frameworks)}')
         return v
     
-    @validator('file_id')
+    @field_validator('file_id')
+    @classmethod
     def validate_file_id(cls, v):
         if v is not None and not re.match(r'^[a-f0-9\-]+$', v):
             raise ValueError('Invalid file ID format')
@@ -124,19 +132,28 @@ class ThreatModelResponse(BaseModel):
     generated_at: datetime = Field(default_factory=datetime.utcnow, description="Generation timestamp")
     processing_time_ms: Optional[int] = Field(None, description="Processing time in milliseconds")
     
-    @validator('id')
+    @field_validator('id')
+
+    
+    @classmethod
     def validate_id(cls, v):
         if not re.match(r'^[a-f0-9\-]+$', v):
             raise ValueError('Invalid ID format')
         return v
     
-    @validator('estimated_cost')
+    @field_validator('estimated_cost')
+
+    
+    @classmethod
     def validate_cost(cls, v):
         if v < 0:
             raise ValueError('Cost cannot be negative')
         return round(v, 4)
     
-    @validator('processing_time_ms')
+    @field_validator('processing_time_ms')
+
+    
+    @classmethod
     def validate_processing_time(cls, v):
         if v is not None and v < 0:
             raise ValueError('Processing time cannot be negative')
@@ -150,7 +167,10 @@ class AsyncThreatModelRequest(BaseModel):
     llm_provider: Optional[str] = Field(None, description="LLM provider to use")
     priority: str = Field(default="normal", description="Job priority (low, normal, high)")
     
-    @validator('content')
+    @field_validator('content')
+
+    
+    @classmethod
     def validate_content(cls, v):
         if not v or not v.strip():
             raise ValueError('Content cannot be empty')
@@ -171,20 +191,29 @@ class AsyncThreatModelRequest(BaseModel):
         
         return v.strip()
     
-    @validator('framework')
+    @field_validator('framework')
+
+    
+    @classmethod
     def validate_framework(cls, v):
         valid_frameworks = ['STRIDE', 'LINDDUN', 'PASTA', 'Attack Trees', 'ATTACK_TREES']
         if v not in valid_frameworks:
             raise ValueError(f'Invalid framework. Must be one of: {", ".join(valid_frameworks)}')
         return v
 
-    @validator('file_id')
+    @field_validator('file_id')
+
+
+    @classmethod
     def validate_file_id(cls, v):
         if v is not None and not re.match(r'^[a-f0-9\-]+$', v):
             raise ValueError('Invalid file ID format')
         return v
 
-    @validator('priority')
+    @field_validator('priority')
+
+
+    @classmethod
     def validate_priority(cls, v):
         valid_priorities = ['low', 'normal', 'high']
         if v not in valid_priorities:
@@ -195,7 +224,10 @@ class JobResponse(BaseModel):
     """Response model for job creation."""
     job_id: str = Field(..., description="Unique job identifier")
     
-    @validator('job_id')
+    @field_validator('job_id')
+
+    
+    @classmethod
     def validate_job_id(cls, v):
         if not re.match(r'^[a-f0-9\-]+$', v):
             raise ValueError('Invalid job ID format')
@@ -214,19 +246,28 @@ class JobStatusResponse(BaseModel):
     error: Optional[str] = Field(None, description="Error message if failed")
     processing_time_ms: Optional[int] = Field(None, description="Total processing time")
     
-    @validator('job_id')
+    @field_validator('job_id')
+
+    
+    @classmethod
     def validate_job_id(cls, v):
         if not re.match(r'^[a-f0-9\-]+$', v):
             raise ValueError('Invalid job ID format')
         return v
     
-    @validator('progress')
+    @field_validator('progress')
+
+    
+    @classmethod
     def validate_progress(cls, v):
         if v < 0 or v > 100:
             raise ValueError('Progress must be between 0 and 100')
         return v
     
-    @validator('processing_time_ms')
+    @field_validator('processing_time_ms')
+
+    
+    @classmethod
     def validate_processing_time(cls, v):
         if v is not None and v < 0:
             raise ValueError('Processing time cannot be negative')
@@ -241,7 +282,10 @@ class CacheEntry(BaseModel):
     last_accessed: datetime = Field(..., description="Last access time")
     expires_at: Optional[datetime] = Field(None, description="Expiration time")
     
-    @validator('access_count')
+    @field_validator('access_count')
+
+    
+    @classmethod
     def validate_access_count(cls, v):
         if v < 0:
             raise ValueError('Access count cannot be negative')
@@ -256,19 +300,28 @@ class ThreatModelMetadata(BaseModel):
     tags: List[str] = Field(default_factory=list, description="Analysis tags")
     notes: Optional[str] = Field(None, description="Additional notes")
     
-    @validator('system_name')
+    @field_validator('system_name')
+
+    
+    @classmethod
     def validate_system_name(cls, v):
         if v is not None and len(v) > 100:
             raise ValueError('System name too long (max 100 characters)')
         return v
     
-    @validator('analyst')
+    @field_validator('analyst')
+
+    
+    @classmethod
     def validate_analyst(cls, v):
         if v is not None and len(v) > 50:
             raise ValueError('Analyst name too long (max 50 characters)')
         return v
     
-    @validator('tags')
+    @field_validator('tags')
+
+    
+    @classmethod
     def validate_tags(cls, v):
         if len(v) > 10:
             raise ValueError('Too many tags (max 10)')
@@ -286,14 +339,20 @@ class ThreatModelExport(BaseModel):
     template: Optional[str] = Field(None, description="Custom template to use")
     language: str = Field(default="en", description="Export language")
     
-    @validator('format')
+    @field_validator('format')
+
+    
+    @classmethod
     def validate_format(cls, v):
         valid_formats = ['pdf', 'docx', 'json', 'html', 'markdown']
         if v not in valid_formats:
             raise ValueError(f'Invalid format. Must be one of: {", ".join(valid_formats)}')
         return v
     
-    @validator('language')
+    @field_validator('language')
+
+    
+    @classmethod
     def validate_language(cls, v):
         if not re.match(r'^[a-z]{2}(-[A-Z]{2})?$', v):
             raise ValueError('Invalid language code format')
