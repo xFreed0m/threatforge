@@ -35,3 +35,4 @@ dist/
 /logs/
 .env
 backend/uploads/
+/uploads/

@@ -316,9 +316,171 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - AI capabilities powered by [OpenAI](https://openai.com/) and [Anthropic](https://anthropic.com/)
 - Icons from [Heroicons](https://heroicons.com/)
 
+## Threat Modeling File Upload Feature
+
+This feature provides AI-powered threat modeling analysis for cybersecurity systems. Users can upload diagram files or provide text descriptions of systems to generate comprehensive threat models using various frameworks.
+
+### Supported File Types
+- DRAWIO (.drawio) - Diagram files for system architecture
+- PNG (.png) - Image files
+- JPG (.jpg) - Image files  
+- SVG (.svg) - Vector graphics
+- XML (.xml) - XML-based diagrams
+
+### File Size Limit
+- Maximum file size: 10MB
+
+### AI-Powered Threat Modeling
+The system uses advanced AI models (OpenAI GPT and Anthropic Claude) to generate comprehensive threat models based on:
+
+- **System descriptions** - Text-based descriptions of systems, architectures, or components
+- **Uploaded diagrams** - Visual representations of system architecture
+- **Multiple frameworks** - STRIDE, LINDDUN, PASTA, and Attack Trees analysis
+
+### Generated Threat Models Include
+1. **System Overview** - Brief description of the analyzed system
+2. **Asset Identification** - Key assets, data, and components
+3. **Threat Actors** - Potential attackers and their motivations
+4. **Threat Analysis** - Detailed threats using the selected framework
+5. **Risk Assessment** - Threat ratings (High/Medium/Low) based on likelihood and impact
+6. **Mitigation Strategies** - Recommended controls and countermeasures
+7. **Security Recommendations** - Overall security posture improvements
+
+### API Endpoints
+- `POST /api/threat-model/upload` — Upload a diagram file (multipart/form-data, field: `file`)
+- `GET /api/threat-model/files` — List uploaded files
+- `DELETE /api/threat-model/files/{file_id}` — Delete a file by its ID
+- `POST /api/threat-model/generate` — Generate AI-powered threat model (synchronous)
+- `POST /api/threat-model/generate-async` — Generate AI-powered threat model (asynchronous)
+- `GET /api/threat-model/jobs/{job_id}` — Get async job status and progress
+- `DELETE /api/threat-model/jobs/{job_id}` — Cancel an async job
+- `GET /api/threat-model/jobs` — List recent jobs
+- `POST /api/threat-model/estimate-cost` — Estimate costs across all AI providers
+- `GET /api/threat-model/providers` — Get available AI providers
+
+#### Example Async Threat Model Generation Request
+```sh
+curl -X POST "http://localhost:8000/api/threat-model/generate-async" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "A web application with user authentication and database storage",
+    "framework": "STRIDE",
+    "file_id": "optional-uploaded-file-id",
+    "llm_provider": "openai"
+  }'
+```
+
+#### Example Job Status Check
+```sh
+curl -X GET "http://localhost:8000/api/threat-model/jobs/{job_id}"
+```
+
+#### Example Threat Model Generation Request
+```sh
+curl -X POST "http://localhost:8000/api/threat-model/generate" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "A web application with user authentication and database storage",
+    "framework": "STRIDE",
+    "file_id": "optional-uploaded-file-id",
+    "llm_provider": "openai"
+  }'
+```
+
+#### Example Cost Estimation Request
+```sh
+curl -X POST "http://localhost:8000/api/threat-model/estimate-cost" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "A cloud-based microservices application",
+    "framework": "STRIDE",
+    "llm_provider": "openai"
+  }'
+```
+
+### Frontend Usage
+- Use the "Threat Model Upload" button at the top of the app to switch to the threat modeling interface
+- Upload supported diagram files for additional context (optional)
+- Provide a detailed system description in the text area
+- Select a threat modeling framework (STRIDE, LINDDUN, PASTA, Attack Trees)
+- Choose an AI provider (OpenAI or Anthropic)
+- Generate comprehensive threat models with cost estimation
+- Export results in multiple formats (Text, Markdown, JSON, PDF)
+
+### Features
+- **Drag & Drop Upload** - Easy file upload with visual feedback
+- **Multi-file Support** - Upload and manage multiple diagram files
+- **Bulk Operations** - Select and delete multiple files at once
+- **Progress Tracking** - Real-time upload progress indicators
+- **Cost Comparison** - Compare costs across different AI providers
+- **Export Options** - Download threat models in various formats
+- **Form Validation** - Real-time validation and error handling
+- **Async Processing** - Background job processing for complex analyses
+- **Progress Monitoring** - Real-time job status and progress tracking
+- **Result Caching** - Automatic caching to avoid regenerating similar models
+- **Job Management** - View, cancel, and manage async generation jobs
+- **Dual Generation Modes** - Choose between synchronous and asynchronous processing
+- **Visual Threat Modeling** - Interactive diagram-based threat modeling
+- **Component Library** - Pre-built components for common system elements
+- **Threat Mapping** - Visual threat assignment to system components
+- **Advanced Export** - Professional PDF reports and executive summaries
+- **Compliance Reports** - Framework-specific compliance analysis
+- **Custom Templates** - Configurable export templates and formats
 
 ---
 
 <div align="center">
 Made with ❤️ by the ThreatForge team
 </div>
+
+## 📚 Documentation
+
+### User Guides
+- **[Quick Start Guide](docs/QUICK_START.md)** - Get up and running in 5 minutes
+- **[Threat Modeling User Guide](docs/THREAT_MODELING_GUIDE.md)** - Comprehensive guide to threat modeling
+- **[Best Practices](docs/BEST_PRACTICES.md)** - Best practices for effective threat modeling
+- **[Sample Threat Models](docs/sample_threat_models.md)** - Examples and templates
+
+### Features Overview
+
+#### 🤖 AI-Powered Threat Modeling
+- **Multiple Frameworks**: STRIDE, LINDDUN, PASTA, Attack Trees
+- **AI Providers**: OpenAI GPT and Anthropic Claude integration
+- **Async Processing**: Background job processing with progress tracking
+- **Intelligent Caching**: Automatic result caching for similar requests
+
+#### 🎨 Visual Threat Modeling
+- **Interactive Diagrams**: Drag-and-drop system component creation
+- **Component Library**: Pre-built components for common system elements
+- **Threat Mapping**: Visual threat assignment to system components
+- **Real-time Collaboration**: Multi-user threat modeling sessions
+- **Diagram Export**: Export diagrams in multiple formats
+
+#### 📊 Advanced Export Options
+- **PDF Reports**: Professional PDF reports with executive summaries
+- **Executive Summaries**: High-level summaries for stakeholders
+- **Technical Reports**: Detailed technical analysis for security teams
+- **Compliance Reports**: Compliance-focused reports with controls mapping
+- **Custom Templates**: Configurable export templates and formats
+
+#### 🔄 Workflow Integration
+- **File Upload**: Support for DRAWIO, PNG, JPG, SVG, XML diagrams
+- **Job Monitoring**: Real-time tracking of async threat model generation
+- **Cost Comparison**: Compare costs across different AI providers
+- **Export Integration**: Export to various formats and platforms
+
+### API Documentation
+- **Threat Modeling API**: `POST /api/threat-model/generate`, `POST /api/threat-model/generate-async`
+- **File Management**: `POST /api/threat-model/upload`, `GET /api/threat-model/files`, `DELETE /api/threat-model/files/clear`
+- **Job Management**: `GET /api/threat-model/jobs/{job_id}`, `DELETE /api/threat-model/jobs/{job_id}`
+- **Cost Estimation**: `POST /api/threat-model/estimate-cost`
+- **Provider Information**: `GET /api/threat-model/providers`
+
+### Interactive Features
+- **Built-in Tutorial**: Click the "Tutorial" button in the threat modeling interface
+- **Visual Modeling**: Switch between text-based and visual threat modeling
+- **Real-time Job Monitoring**: Track async threat model generation progress
+- **Cost Comparison**: Compare costs across different AI providers
+- **Advanced Export**: Generate professional reports in multiple formats
+
+---
