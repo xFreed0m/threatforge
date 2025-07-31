@@ -53,6 +53,7 @@ class JobService:
         if file_content:
             content_to_analyze = f"Diagram Content:\n{file_content}\n\nAdditional Context:\n{request.content}"
         
+
         return f"""# ELITE THREAT MODELING ANALYSIS
 
 ## EXECUTIVE SUMMARY
@@ -159,6 +160,7 @@ Structure your analysis with these sections:
 - Remediation requirements
 
 Ensure your analysis is technically accurate, actionable, and provides clear guidance for security improvement initiatives."""
+
     
     def create_job(self, request: AsyncThreatModelRequest) -> str:
         """Create a new async job for threat model generation."""

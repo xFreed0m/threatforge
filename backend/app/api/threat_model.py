@@ -234,6 +234,7 @@ Structure your analysis with these sections:
 
 Ensure your analysis is technically accurate, actionable, and provides clear guidance for security improvement initiatives."""
 
+
 @router.post("/upload", response_model=FileUploadResponse)
 async def upload_file(
     file: UploadFile = File(...),
