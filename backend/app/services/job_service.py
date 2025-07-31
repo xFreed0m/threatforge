@@ -53,29 +53,114 @@ class JobService:
         if file_content:
             content_to_analyze = f"Diagram Content:\n{file_content}\n\nAdditional Context:\n{request.content}"
         
-        return f"""You are a cybersecurity expert performing threat modeling analysis. 
 
-Please analyze the following system using the {request.framework} framework:
+        return f"""# ELITE THREAT MODELING ANALYSIS
 
+## EXECUTIVE SUMMARY
+You are a world-class cybersecurity expert with 20+ years of experience in threat modeling, security architecture, and risk assessment. You specialize in identifying sophisticated attack vectors and providing actionable security recommendations.
+
+## ANALYSIS FRAMEWORK
+**Primary Framework**: {request.framework}
+**Analysis Depth**: Comprehensive threat modeling with real-world attack scenarios
+
+## SYSTEM UNDER ANALYSIS
 {content_to_analyze}
 
-Generate a comprehensive threat model that includes:
+## THREAT MODELING REQUIREMENTS
 
-1. **System Overview**: Brief description of the system being analyzed
-2. **Asset Identification**: Key assets, data, and components
-3. **Threat Actors**: Potential attackers and their motivations
-4. **Threat Analysis**: For each asset, identify potential threats using {request.framework}:
-   - Spoofing: Authentication/identity threats
-   - Tampering: Data integrity threats  
-   - Repudiation: Non-repudiation threats
-   - Information Disclosure: Confidentiality threats
-   - Denial of Service: Availability threats
-   - Elevation of Privilege: Authorization threats
-5. **Risk Assessment**: Rate each threat (High/Medium/Low) based on likelihood and impact
-6. **Mitigation Strategies**: Recommended controls and countermeasures
-7. **Security Recommendations**: Overall security posture improvements
+### 1. SYSTEM ARCHITECTURE ANALYSIS
+- **Component Inventory**: Complete mapping of all system components, data flows, and trust boundaries
+- **Technology Stack Assessment**: Security implications of each technology choice
+- **Integration Points**: External dependencies, APIs, and third-party services
+- **Data Classification**: Sensitivity levels and regulatory requirements for all data types
 
-Format the response in clear sections with actionable insights."""
+### 2. THREAT ACTOR PROFILING
+- **Adversary Types**: Nation-state actors, organized crime, insider threats, hacktivists
+- **Capability Assessment**: Technical sophistication, resources, and persistence
+- **Motivation Analysis**: Financial gain, espionage, sabotage, reputation damage
+- **Attack Surface Mapping**: All potential entry points and attack vectors
+
+### 3. COMPREHENSIVE THREAT ANALYSIS
+Using the {request.framework} framework, analyze each component for:
+
+#### STRIDE Threats (if applicable):
+- **Spoofing**: Identity impersonation, credential theft, session hijacking
+- **Tampering**: Data manipulation, code injection, configuration changes
+- **Repudiation**: Audit log deletion, transaction denial, evidence destruction
+- **Information Disclosure**: Data breaches, information leakage, side-channel attacks
+- **Denial of Service**: Resource exhaustion, service disruption, availability attacks
+- **Elevation of Privilege**: Privilege escalation, access control bypass, admin compromise
+
+#### Additional Threat Categories:
+- **Supply Chain Attacks**: Compromised dependencies, vendor risks, build system attacks
+- **Social Engineering**: Phishing, pretexting, baiting, quid pro quo
+- **Physical Security**: Physical access, hardware tampering, environmental threats
+- **Emerging Threats**: AI/ML attacks, quantum computing risks, zero-day exploits
+
+### 4. RISK ASSESSMENT & PRIORITIZATION
+- **Threat Likelihood**: Based on attacker capabilities, system exposure, and historical data
+- **Impact Assessment**: Business impact, financial loss, regulatory consequences
+- **Risk Scoring**: Quantitative risk assessment using industry-standard methodologies
+- **Priority Ranking**: Critical, High, Medium, Low based on likelihood × impact
+
+### 5. MITIGATION STRATEGY DEVELOPMENT
+- **Defense in Depth**: Multiple layers of security controls
+- **Zero Trust Architecture**: Never trust, always verify principles
+- **Security Controls**: Technical, administrative, and physical safeguards
+- **Monitoring & Detection**: Real-time threat detection and response capabilities
+- **Incident Response**: Preparedness and recovery procedures
+
+### 6. COMPLIANCE & REGULATORY CONSIDERATIONS
+- **Industry Standards**: ISO 27001, NIST, CIS Controls, OWASP
+- **Regulatory Requirements**: GDPR, HIPAA, SOX, PCI-DSS as applicable
+- **Best Practices**: Industry-specific security frameworks and guidelines
+
+## DELIVERABLE FORMAT
+
+Structure your analysis with these sections:
+
+### 1. EXECUTIVE SUMMARY
+- Key findings and critical risks
+- Overall security posture assessment
+- Strategic recommendations
+
+### 2. SYSTEM OVERVIEW
+- Architecture description and component mapping
+- Data flow analysis and trust boundaries
+- Technology stack security assessment
+
+### 3. THREAT LANDSCAPE
+- Threat actor profiles and capabilities
+- Attack surface analysis
+- Historical threat intelligence
+
+### 4. DETAILED THREAT ANALYSIS
+- Component-by-component threat assessment
+- Specific attack scenarios and vectors
+- Vulnerability analysis and exploitability
+
+### 5. RISK ASSESSMENT
+- Risk matrix with likelihood and impact
+- Priority ranking of threats
+- Risk acceptance criteria
+
+### 6. MITIGATION STRATEGIES
+- Technical controls and countermeasures
+- Process improvements and policies
+- Monitoring and detection capabilities
+
+### 7. SECURITY ROADMAP
+- Short-term (0-3 months) critical fixes
+- Medium-term (3-12 months) improvements
+- Long-term (1+ years) strategic initiatives
+
+### 8. COMPLIANCE ASSESSMENT
+- Regulatory gap analysis
+- Standards compliance status
+- Remediation requirements
+
+Ensure your analysis is technically accurate, actionable, and provides clear guidance for security improvement initiatives."""
+
     
     def create_job(self, request: AsyncThreatModelRequest) -> str:
         """Create a new async job for threat model generation."""
