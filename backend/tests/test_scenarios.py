@@ -1,11 +1,11 @@
 import pytest
-from httpx import AsyncClient
+from httpx import AsyncClient, ASGITransport
 from fastapi import status
 from app.main import app
 
 @pytest.mark.asyncio
 async def test_get_providers():
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         resp = await ac.get("/api/scenarios/providers")
         assert resp.status_code == 200
         assert "providers" in resp.json()
@@ -22,7 +22,7 @@ async def test_generate_valid():
         "participants": ["Security Team"],
         "duration_hours": 2
     }
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         resp = await ac.post("/api/scenarios/generate", json=payload)
         assert resp.status_code == 200
         data = resp.json()
@@ -35,7 +35,7 @@ async def test_generate_invalid():
         # missing required fields
         "company_name": "TestCo"
     }
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         resp = await ac.post("/api/scenarios/generate", json=payload)
         assert resp.status_code == 422
 
@@ -51,7 +51,7 @@ async def test_generate_with_competitor_threat_actor():
         "participants": ["Security Team", "Legal Team"],
         "duration_hours": 2
     }
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         resp = await ac.post("/api/scenarios/generate", json=payload)
         assert resp.status_code == 200
         data = resp.json()
@@ -70,7 +70,7 @@ async def test_estimate_cost():
         "participants": ["Security Team"],
         "duration_hours": 2
     }
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         resp = await ac.post("/api/scenarios/estimate-cost", json=payload)
         assert resp.status_code == 200
         assert isinstance(resp.json(), list)
@@ -88,7 +88,7 @@ async def test_reroll_section():
         "participants": ["Security Team"],
         "duration_hours": 2
     }
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         gen_resp = await ac.post("/api/scenarios/generate", json=payload)
         assert gen_resp.status_code == 200
         scenario = gen_resp.json()["scenario"]
@@ -105,7 +105,7 @@ async def test_reroll_section():
 
 @pytest.mark.asyncio
 async def test_history_endpoints():
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         # Generate a scenario to ensure history is not empty
         payload = {
             "company_name": "TestCo",
