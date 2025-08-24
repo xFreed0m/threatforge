@@ -1,32 +1,31 @@
 # Web framework and server
-fastapi==0.109.0
-uvicorn[standard]==0.27.0
-gunicorn==21.2.0
-python-multipart==0.0.6
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+gunicorn==23.0.0
+python-multipart==0.0.18
 
 # Data validation and settings
-pydantic==2.5.3
-pydantic-settings==2.1.0
+pydantic==2.10.3
+pydantic-settings==2.7.0
 
 # Database
-sqlalchemy==2.0.25
+sqlalchemy==2.0.36
 
 # HTTP client
-httpx==0.26.0
+httpx==0.28.1
 
 # Environment management
-python-dotenv==1.0.0
+python-dotenv==1.0.1
 
 # AI/LLM providers
-openai==1.12.0
-anthropic==0.18.1
+openai==1.54.4
+anthropic==0.40.0
 
 # Testing
-pytest==7.4.4
-pytest-cov==4.1.0
-fastapi[testclient]==0.109.0
-pytest-asyncio
+pytest==8.3.4
+pytest-cov==6.0.0
+pytest-asyncio==0.24.0
 
 # Code quality and formatting
-black==23.12.1
-ruff==0.1.11
+black==24.10.0
+ruff==0.8.4
